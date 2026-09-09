@@ -13,7 +13,3064 @@
     --ink: #211C15;
     --ink-soft: #5B5443;
     --ink-faint: #8B8267;
+    --accent: #A9791E;<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>トーナメント</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    --bg: #E7E1CE;
+    --surface: #F6F2E6;
+    --surface-2: #DED5B6;
+    --ink: #211C15;
+    --ink-soft: #5B5443;
+    --ink-faint: #8B8267;
     --accent: #A9791E;
+    --accent-strong: #8C6115;
+    --accent-ink: #2C2004;
+    --green: #3F6B44;
+    --green-soft: #E4EBDD;
+    --red: #A23B34;
+    --red-soft: #F1E0DC;
+    --line: #C9BE9C;
+    --shadow: 0 1px 0 rgba(33,28,21,0.06), 0 8px 20px -14px rgba(33,28,21,0.35);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #18140F;
+      --surface: #241E16;
+      --surface-2: #322A1E;
+      --ink: #F1E9D4;
+      --ink-soft: #C4B99C;
+      --ink-faint: #8B8267;
+      --accent: #DBAE4F;
+      --accent-strong: #E9C273;
+      --accent-ink: #241A05;
+      --green: #7FB981;
+      --green-soft: #26301F;
+      --red: #DD8478;
+      --red-soft: #35211C;
+      --line: #453B29;
+      --shadow: 0 1px 0 rgba(0,0,0,0.3), 0 12px 28px -16px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #18140F;
+    --surface: #241E16;
+    --surface-2: #322A1E;
+    --ink: #F1E9D4;
+    --ink-soft: #C4B99C;
+    --ink-faint: #8B8267;
+    --accent: #DBAE4F;
+    --accent-strong: #E9C273;
+    --accent-ink: #241A05;
+    --green: #7FB981;
+    --green-soft: #26301F;
+    --red: #DD8478;
+    --red-soft: #35211C;
+    --line: #453B29;
+    --shadow: 0 1px 0 rgba(0,0,0,0.3), 0 12px 28px -16px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Archivo", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .display {
+    font-family: "Big Shoulders Display", "Archivo", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .mono, .tabular, .score-num, .rank-num {
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a { color: var(--accent-strong); }
+
+  button, select {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Header ---------- */
+  .header {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 18px 20px 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-icon {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, var(--red) 0 14%, var(--surface) 14% 16%, var(--green) 16% 30%, var(--surface) 30% 33%, var(--ink) 33% 48%, var(--surface) 48% 100%);
+    border: 2px solid var(--accent);
+    box-shadow: var(--shadow);
+  }
+  .brand-text h1 { font-size: 22px; margin: 0; line-height: 1.1; }
+  .brand-text p { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+  .role-toggle {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .role-toggle button {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .role-toggle button[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .readonly-banner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    font-size: 13px;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ---------- Layout ---------- */
+  .container { max-width: 720px; margin: 0 auto; padding: 20px 20px 80px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+
+  /* ---------- Top-level nav (ロビン表一覧 / 履歴) ---------- */
+  .top-nav {
+    display: flex; gap: 6px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .top-nav .tab { font-size: 15px; }
+
+  /* ---------- Setup ---------- */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input[type="text"], .field select, select.field-select {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    width: 100%;
+  }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-row .member-inputs { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+  .add-row input { flex: 1; min-width: 96px; }
+  .add-row input.rating-input { flex: 0 0 90px; min-width: 70px; }
+  .player-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .player-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 6px 6px 12px;
+    font-size: 14px;
+  }
+  .player-chip button {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 15px; line-height: 1; padding: 2px 4px;
+  }
+  .player-chip button:hover { color: var(--red); }
+  .rt-badge { font-size: 11px; color: var(--ink-faint); font-weight: 700; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stepper {
+    display: inline-flex; align-items: center; gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .stepper button {
+    border: none; background: var(--surface-2); color: var(--ink);
+    width: 34px; height: 34px; font-size: 16px; font-weight: 700;
+  }
+  .stepper output {
+    min-width: 36px; text-align: center; font-size: 15px; font-weight: 600;
+  }
+
+  /* ---------- Format segmented control ---------- */
+  .seg { display: flex; gap: 6px; }
+  .seg button {
+    flex: 1; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft);
+    padding: 10px 8px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  }
+  .seg button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+  }
+  .format-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 9px; border: 1px solid transparent;
+    padding: 11px 18px; font-size: 14.5px; font-weight: 600;
+    transition: transform 0.08s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 7px; }
+  .btn-block { width: 100%; }
+
+  /* ---------- Tabs (sub-tabs within a table) ---------- */
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    background: none; border: none; padding: 10px 4px; margin-right: 18px;
+    font-size: 14px; font-weight: 600; color: var(--ink-faint);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* ---------- Table list ---------- */
+  .table-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .table-card {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .table-card .t-info h3 { margin: 0 0 5px; font-size: 17px; }
+  .table-card .t-info .meta { font-size: 12px; color: var(--ink-faint); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .table-card .progress { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* ---------- Table detail header ---------- */
+  .t-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 10px 0 12px; }
+  .t-head h2 { font-size: 24px; margin: 0 0 4px; }
+  .t-meta { font-size: 12.5px; color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .t-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ---------- Leg config panel ---------- */
+  .leg-panel {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .leg-panel .leg-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .leg-summary-text { color: var(--ink-soft); }
+  .leg-summary-text b { color: var(--ink); font-weight: 700; }
+  .leg-edit-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .leg-row { display: flex; align-items: center; gap: 10px; }
+  .leg-row .leg-num { width: 56px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+  .leg-row select { flex: 1; }
+
+  /* ---------- Handicap panel ---------- */
+  .handicap-panel { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .handicap-group-label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+  .handicap-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .handicap-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 52px; flex-shrink: 0; }
+  .handicap-cell-label { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+  .handicap-input {
+    width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 7px; padding: 6px 4px; font-size: 13px; text-align: center;
+  }
+  .handicap-value { font-size: 13.5px; font-weight: 600; }
+
+  /* ---------- Board strip ---------- */
+  .board-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .board-chip {
+    border-radius: 10px; padding: 8px 12px; font-size: 12.5px;
+    border: 1px solid var(--line); min-width: 108px;
+  }
+  .board-chip .label { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 2px; }
+  .board-chip.free { background: var(--surface); color: var(--ink-soft); }
+  .board-chip.busy { background: var(--green-soft); border-color: var(--green); color: var(--ink); font-weight: 600; }
+
+  /* ---------- Match cards ---------- */
+  .match-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .match-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .match-players { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .player-name { font-size: 15.5px; font-weight: 600; flex: 1; min-width: 0; overflow-wrap: break-word; }
+  .player-name.winner { color: var(--accent-strong); }
+  .result-mark { display: inline-block; font-weight: 700; font-size: 13px; line-height: 1; margin-right: 3px; }
+  .result-mark.mark-win { color: var(--accent-strong); }
+  .result-mark.mark-lose { color: var(--red); }
+  .vs-dot {
+    flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+    background: radial-gradient(circle, var(--red) 0 30%, var(--surface-2) 30% 55%, var(--green) 55% 78%, var(--surface-2) 78% 100%);
+    border: 1px solid var(--line);
+  }
+  .match-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .status-pill {
+    font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+  }
+  .status-pill.pending { background: var(--surface-2); color: var(--ink-faint); }
+  .status-pill.in_progress { background: var(--accent); color: var(--accent-ink); }
+  .status-pill.done { background: var(--green-soft); color: var(--green); }
+  .match-score { font-size: 13px; color: var(--ink-soft); }
+  .match-body { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .match-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .score-row { display: flex; align-items: center; gap: 10px; }
+  .score-row .name { font-size: 13.5px; width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board-select {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 7px; padding: 6px 8px; font-size: 13px;
+  }
+  .match-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* ---------- Cross table (総当たり表) ---------- */
+  .ct-wrap { margin-bottom: 18px; }
+  .ct-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ct-header-bar { width: 5px; align-self: stretch; min-height: 22px; background: var(--red); border-radius: 3px; flex-shrink: 0; }
+  .ct-title { margin: 0; font-size: 17px; letter-spacing: 0; text-transform: none; }
+  .ct-table { border-collapse: collapse; width: 100%; }
+  .ct-table th, .ct-table td {
+    border: 1px solid var(--line);
+    text-align: center;
+    padding: 0;
+  }
+  .ct-corner { background: var(--surface-2); min-width: 44px; }
+  .ct-colnum {
+    min-width: 76px; padding: 8px 4px !important; font-size: 13.5px; font-weight: 700;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .ct-stat-h {
+    width: 38px; padding: 4px 2px !important; font-size: 9.5px; line-height: 1.25; font-weight: 700; color: var(--ink-faint);
+    background: var(--surface-2); letter-spacing: 0;
+  }
+  .ct-rowlabel {
+    padding: 6px 10px !important; text-align: left !important; white-space: nowrap;
+    background: var(--surface-2); font-weight: 600; font-size: 13px;
+  }
+  .ct-rownum { display: inline-block; min-width: 16px; font-weight: 700; color: var(--ink); margin-right: 6px; }
+  .ct-rowname { color: var(--ink-soft); font-weight: 500; }
+  .ct-cell { width: 76px; height: 40px; position: relative; background: var(--surface); }
+  .ct-cell.diag {
+    background: repeating-linear-gradient(45deg, transparent 0, transparent calc(50% - 1px), var(--line) 50%, transparent calc(50% + 1px), transparent 100%);
+  }
+  .ct-cell.hatched {
+    background:
+      repeating-linear-gradient(45deg, var(--line) 0, var(--line) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, var(--line) 0, var(--line) 1px, transparent 1px, transparent 7px);
+    opacity: 0.55;
+  }
+  .ct-cell.fillable.live { background: var(--surface-2); }
+  .ct-cell.fillable.done { background: var(--green-soft); }
+  .ct-cell-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; height: 40px; border: none; background: none;
+    font-size: 11.5px; color: var(--ink-soft); padding: 0 2px; white-space: nowrap;
+  }
+  .ct-cell.done .ct-cell-btn { color: var(--green); font-weight: 700; }
+  .ct-cell.fillable:not(.done):hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ct-cell span.mono {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; height: 40px; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap;
+  }
+  .ct-cell.ct-mirror { opacity: 0.82; }
+  .ct-cell.ct-mirror .ct-cell-btn, .ct-cell.ct-mirror span.mono { color: var(--ink-faint); }
+  .ct-stat { width: 38px; padding: 6px 2px !important; font-size: 12.5px; }
+  .ct-rank { font-weight: 700; }
+  .ct-editor { margin-top: 14px; }
+  .ct-legend {
+    margin-top: 10px; display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12.5px; color: var(--ink-soft);
+  }
+  .ct-legend-tag {
+    flex-shrink: 0; background: var(--red); color: #fff; font-weight: 700;
+    font-size: 11px; padding: 4px 10px; border-radius: 5px; letter-spacing: 0.02em; margin-top: 1px;
+  }
+  .ct-legend-list {
+    flex: 1; min-width: 0; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 6px 4px;
+  }
+  .ct-legend-item { white-space: nowrap; }
+  .ct-legend-item b { color: var(--ink); font-family: "Space Mono", ui-monospace, monospace; }
+
+  /* ---------- Standings ---------- */
+  .standings-table { width: 100%; border-collapse: collapse; }
+  .table-scroll { overflow-x: auto; }
+  .standings-table th, .standings-table td {
+    padding: 10px 8px; font-size: 13.5px; text-align: left; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .standings-table th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); font-weight: 600;
+  }
+  .standings-table td.num, .standings-table th.num { text-align: right; }
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .rank-badge.r1 { background: var(--accent); color: var(--accent-ink); }
+  .rank-badge.r2 { background: #C6C0AC; color: #2A2618; }
+  .rank-badge.r3 { background: #C89464; color: #2A1B0E; }
+
+  /* ---------- History ---------- */
+  .history-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); }
+  .history-item summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .history-item summary::-webkit-details-marker { display: none; }
+  .history-item h3 { font-size: 16px; margin: 0 0 4px; }
+  .history-item .h-date { font-size: 12px; color: var(--ink-faint); }
+  .history-item .h-winner { font-size: 13px; color: var(--accent-strong); font-weight: 600; }
+  .history-standings { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .history-actions { margin-top: 10px; }
+
+  /* ---------- Misc ---------- */
+  .empty-state { text-align: center; padding: 36px 16px; color: var(--ink-soft); }
+  .empty-state .icon { font-size: 30px; margin-bottom: 10px; }
+  .muted { color: var(--ink-soft); font-size: 13px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); font-weight: 700; margin: 24px 0 10px; }
+  .divider { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+
+  /* ---------- Tournament bracket ---------- */
+  .trn-source-list { display: flex; flex-direction: column; gap: 8px; }
+  .trn-source-row {
+    display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+    border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px;
+  }
+  .trn-source-row.checked { background: var(--green-soft); border-color: var(--green); }
+  .trn-source-check { font-size: 18px; flex-shrink: 0; }
+  .trn-source-info { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+  .trn-source-info b { font-weight: 600; }
+  .trn-manual-list { display: flex; flex-direction: column; gap: 8px; }
+  .trn-manual-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 8px 12px;
+  }
+  .trn-manual-row.dup { border-color: var(--red); background: rgba(220, 38, 38, 0.08); }
+  .trn-manual-name { font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+  .field select.trn-manual-select {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 6px 8px; font-size: 14px; min-width: 56px; width: auto; flex: 0 0 auto;
+  }
+  .trn-section { margin-bottom: 18px; }
+  .trn-seed-tag { font-size: 10.5px; color: var(--ink-faint); }
+  .bracket-diagram-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px 18px; padding: 6px 16px 18px; min-height: 60px; }
+  .bracket-diagram { display: grid; width: max-content; column-gap: 20px; }
+  .bracket-round-title { grid-row: 1; align-self: end; text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-faint); margin-bottom: 6px; letter-spacing: 0.02em; white-space: nowrap; }
+  .bracket-match-slot { display: flex; flex-direction: column; justify-content: center; position: relative; padding-right: 20px; }
+  .bracket-team-box {
+    border: 1.5px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    padding: 5px 8px; font-size: 12px; line-height: 1.3; margin: 2px 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 108px;
+  }
+  .bracket-team-box.winner { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent-strong); font-weight: 700; }
+  .bracket-team-box.pending { color: var(--ink-faint); font-style: italic; border-style: dashed; }
+  .bracket-match-slot.conn-top::after {
+    content: ""; position: absolute; top: 50%; bottom: 0; right: 2px; width: 18px;
+    border-top: 2px solid var(--line); border-right: 2px solid var(--line);
+  }
+  .bracket-match-slot.conn-bottom::after {
+    content: ""; position: absolute; top: 0; bottom: 50%; right: 2px; width: 18px;
+    border-bottom: 2px solid var(--line); border-right: 2px solid var(--line);
+  }
+  .bracket-match-slot.conn-final::after {
+    content: ""; position: absolute; top: 50%; right: 2px; width: 18px; height: 0; border-top: 2px solid var(--line);
+  }
+  .bracket-champion-col { display: flex; flex-direction: column; justify-content: center; padding-left: 6px; min-width: 110px; }
+  .bracket-champion-box {
+    border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--accent-strong);
+    border-radius: 8px; padding: 10px 14px; font-weight: 800; font-size: 13px; text-align: center; white-space: nowrap;
+  }
+  .bracket-champion-box.pending { border-style: dashed; background: transparent; color: var(--ink-faint); font-weight: 600; }
+
+  /* ---------- Password gate / QR share panel ---------- */
+  .password-banner { display: flex; flex-direction: column; gap: 8px; }
+  .password-label { font-weight: 600; color: var(--ink); }
+  .password-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .password-input {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 8px; padding: 8px 10px; font-size: 15px; width: 120px;
+    letter-spacing: 0.12em;
+  }
+  .password-error { color: var(--red); font-size: 12.5px; font-weight: 600; width: 100%; }
+  .qr-panel { margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .qr-caption { margin: 0; font-size: 12.5px; color: var(--ink-soft); max-width: 320px; }
+  .qr-code-box { background: #fff; padding: 10px; border-radius: 10px; width: 132px; box-shadow: var(--shadow); }
+  .qr-code-box svg { display: block; width: 100%; height: auto; }
+  .qr-url { margin: 0; font-size: 11px; color: var(--ink-faint); word-break: break-all; max-width: 280px; }
+
+  .toast-wrap {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none; width: 100%; padding: 0 16px;
+  }
+  .toast {
+    background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 999px; font-size: 13.5px;
+    box-shadow: var(--shadow); max-width: 420px; text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .brand-text h1 { font-size: 19px; }
+    .score-row .name { width: 68px; }
+    .table-card { flex-direction: column; align-items: stretch; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header class="header">
+    <div class="header-inner">
+      <div class="brand">
+        <div class="brand-icon" aria-hidden="true"></div>
+        <div class="brand-text">
+          <h1>トーナメント</h1>
+          <p>ラウンドロビン式ハウストーナメント盤</p>
+        </div>
+      </div>
+      <div class="role-toggle" id="role-toggle" role="group" aria-label="表示モード"></div>
+    </div>
+  </header>
+  <div id="readonly-banner"></div>
+  <main class="container" id="root"></main>
+</div>
+<div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>
+<script id="qrcode-lib">var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});</script>
+<script type="application/json" id="state-data">{"tables":[],"history":[{"id":"t_uv8lcbouddw","name":"ロビンB","format":"doubles","legs":[{"type":"01","target":501},{"type":"01","target":501},{"type":"01","target":501}],"finishedAt":"2026-09-08T05:53:54.986Z","players":[{"id":"p_lzjvmoqtfma","name":"11・12","members":["11","12"],"rating":22},{"id":"p_ekimyt5tkdu","name":"13・14","members":["13","14"],"rating":25},{"id":"p_t6ef478to9u","name":"15・16","members":["15","16"],"rating":25},{"id":"p_pcs4btnu1c2","name":"17・18","members":["17","18"],"rating":26},{"id":"p_edikzq5uawi","name":"19・20","members":["19","20"],"rating":23}],"finalStandings":[{"name":"11・12","rating":22,"wins":4,"losses":0,"played":4},{"name":"13・14","rating":25,"wins":3,"losses":1,"played":4},{"name":"15・16","rating":25,"wins":2,"losses":2,"played":4},{"name":"17・18","rating":26,"wins":1,"losses":3,"played":4},{"name":"19・20","rating":23,"wins":0,"losses":4,"played":4}]},{"id":"t_nf5po0tsv9s","name":"ロビンA","format":"doubles","legs":[{"type":"01","target":501},{"type":"01","target":501},{"type":"01","target":501}],"finishedAt":"2026-09-08T05:51:00.693Z","players":[{"id":"p_kyapx8es642","name":"1・2","members":["1","2"],"rating":28},{"id":"p_sjeq7rzs8x6","name":"3・4","members":["3","4"],"rating":25},{"id":"p_huazgyese1m","name":"5・6","members":["5","6"],"rating":24},{"id":"p_lhkskxeskbm","name":"7・8","members":["7","8"],"rating":22},{"id":"p_28nyc2tsrcy","name":"9・10","members":["9","10"],"rating":23}],"finalStandings":[{"name":"1・2","rating":28,"wins":4,"losses":0,"played":4},{"name":"3・4","rating":25,"wins":3,"losses":1,"played":4},{"name":"5・6","rating":24,"wins":1,"losses":3,"played":4},{"name":"9・10","rating":23,"wins":1,"losses":3,"played":4},{"name":"7・8","rating":22,"wins":1,"losses":3,"played":4}]}],"bracketHistory":[],"bracket":{"id":"b_qsidx93c857","name":"決勝トーナメント","advanceCount":4,"sourceIds":["t_uv8lcbouddw","t_nf5po0tsv9s"],"sourceNames":["ロビンB","ロビンA"],"legs":[{"type":"01","target":501},{"type":"01","target":501},{"type":"01","target":501}],"rounds":[[{"id":"tm_bh9tk1vc857","round":0,"index":0,"playerAId":"t_uv8lcbouddw_r0","playerAName":"11・12","playerARating":22,"playerASource":{"tableName":"ロビンB","rank":1},"playerBId":"t_nf5po0tsv9s_r3","playerBName":"9・10","playerBRating":23,"playerBSource":{"tableName":"ロビンA","rank":4},"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false},{"id":"tm_zfe35p6c857","round":0,"index":1,"playerAId":"t_nf5po0tsv9s_r1","playerAName":"3・4","playerARating":25,"playerASource":{"tableName":"ロビンA","rank":2},"playerBId":"t_uv8lcbouddw_r2","playerBName":"15・16","playerBRating":25,"playerBSource":{"tableName":"ロビンB","rank":3},"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false},{"id":"tm_dgnbs1vc857","round":0,"index":2,"playerAId":"t_nf5po0tsv9s_r0","playerAName":"1・2","playerARating":28,"playerASource":{"tableName":"ロビンA","rank":1},"playerBId":"t_uv8lcbouddw_r3","playerBName":"17・18","playerBRating":26,"playerBSource":{"tableName":"ロビンB","rank":4},"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false},{"id":"tm_z3huhhoc857","round":0,"index":3,"playerAId":"t_uv8lcbouddw_r1","playerAName":"13・14","playerARating":25,"playerASource":{"tableName":"ロビンB","rank":2},"playerBId":"t_nf5po0tsv9s_r2","playerBName":"5・6","playerBRating":24,"playerBSource":{"tableName":"ロビンA","rank":3},"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false}],[{"id":"tm_dpnu0zsc857","round":1,"index":0,"playerAId":null,"playerAName":null,"playerARating":null,"playerASource":null,"playerBId":null,"playerBName":null,"playerBRating":null,"playerBSource":null,"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false},{"id":"tm_fgnv8ptc857","round":1,"index":1,"playerAId":null,"playerAName":null,"playerARating":null,"playerASource":null,"playerBId":null,"playerBName":null,"playerBRating":null,"playerBSource":null,"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false}],[{"id":"tm_xvexilqc857","round":2,"index":0,"playerAId":null,"playerAName":null,"playerARating":null,"playerASource":null,"playerBId":null,"playerBName":null,"playerBRating":null,"playerBSource":null,"status":"pending","scoreA":0,"scoreB":0,"winnerId":null,"winnerName":null,"bye":false}]],"createdAt":"2026-09-08T12:57:11.995Z"}}</script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore-compat.js"></script>
+<script id="app-script">
+(function () {
+  "use strict";
+
+  /* ============ Constants ============ */
+  var FORMAT_SIZE = { singles: 1, doubles: 2, trios: 3 };
+  var FORMAT_LABEL = { singles: "シングルス", doubles: "ダブルス", trios: "トリオス" };
+  var FORMAT_UNIT = { singles: "名", doubles: "組", trios: "組" };
+  var FORMAT_ORDER = ["singles", "doubles", "trios"];
+  var HISTORY_LIMIT = 15;
+  var LEG_TARGETS = [301, 501, 701];
+  // Hardcoded verbatim copy of this page's own <title>/<link>/<style> block.
+  // buildFullDocument() below uses this instead of scraping document.head at
+  // runtime: the in-page publish() call expects a bare fragment (title/link/
+  // style followed by body content, no <!doctype>/<html>/<head>/<body> of our
+  // own), matching exactly how this page was first published. Deriving head
+  // content from the live DOM instead was fragile and, on at least one
+  // self-publish cycle, produced a page missing all of its own CSS.
+  var HEAD_BLOCK = `<title>トーナメント</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800&family=Archivo:wght@400;500;600;700&family=Space+Mono:wght@400;700&display=swap">
+<style>
+  :root {
+    --bg: #E7E1CE;
+    --surface: #F6F2E6;
+    --surface-2: #DED5B6;
+    --ink: #211C15;
+    --ink-soft: #5B5443;
+    --ink-faint: #8B8267;
+    --accent: #A9791E;
+    --accent-strong: #8C6115;
+    --accent-ink: #2C2004;
+    --green: #3F6B44;
+    --green-soft: #E4EBDD;
+    --red: #A23B34;
+    --red-soft: #F1E0DC;
+    --line: #C9BE9C;
+    --shadow: 0 1px 0 rgba(33,28,21,0.06), 0 8px 20px -14px rgba(33,28,21,0.35);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #18140F;
+      --surface: #241E16;
+      --surface-2: #322A1E;
+      --ink: #F1E9D4;
+      --ink-soft: #C4B99C;
+      --ink-faint: #8B8267;
+      --accent: #DBAE4F;
+      --accent-strong: #E9C273;
+      --accent-ink: #241A05;
+      --green: #7FB981;
+      --green-soft: #26301F;
+      --red: #DD8478;
+      --red-soft: #35211C;
+      --line: #453B29;
+      --shadow: 0 1px 0 rgba(0,0,0,0.3), 0 12px 28px -16px rgba(0,0,0,0.6);
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #18140F;
+    --surface: #241E16;
+    --surface-2: #322A1E;
+    --ink: #F1E9D4;
+    --ink-soft: #C4B99C;
+    --ink-faint: #8B8267;
+    --accent: #DBAE4F;
+    --accent-strong: #E9C273;
+    --accent-ink: #241A05;
+    --green: #7FB981;
+    --green-soft: #26301F;
+    --red: #DD8478;
+    --red-soft: #35211C;
+    --line: #453B29;
+    --shadow: 0 1px 0 rgba(0,0,0,0.3), 0 12px 28px -16px rgba(0,0,0,0.6);
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: "Archivo", "Hiragino Sans", "Noto Sans JP", sans-serif;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  h1, h2, h3, .display {
+    font-family: "Big Shoulders Display", "Archivo", sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+    font-weight: 700;
+    color: var(--ink);
+  }
+
+  .mono, .tabular, .score-num, .rank-num {
+    font-family: "Space Mono", ui-monospace, monospace;
+    font-variant-numeric: tabular-nums;
+  }
+
+  a { color: var(--accent-strong); }
+
+  button, select {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button:focus-visible, input:focus-visible, select:focus-visible, [tabindex]:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+
+  /* ---------- Header ---------- */
+  .header {
+    background: linear-gradient(180deg, var(--surface) 0%, var(--bg) 100%);
+    border-bottom: 1px solid var(--line);
+  }
+  .header-inner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 18px 20px 16px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-icon {
+    width: 44px; height: 44px; flex-shrink: 0;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at center, var(--red) 0 14%, var(--surface) 14% 16%, var(--green) 16% 30%, var(--surface) 30% 33%, var(--ink) 33% 48%, var(--surface) 48% 100%);
+    border: 2px solid var(--accent);
+    box-shadow: var(--shadow);
+  }
+  .brand-text h1 { font-size: 22px; margin: 0; line-height: 1.1; }
+  .brand-text p { margin: 2px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+  .role-toggle {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .role-toggle button {
+    border: 1px solid var(--line);
+    background: var(--surface);
+    color: var(--ink-soft);
+    font-size: 11.5px;
+    padding: 6px 10px;
+    border-radius: 999px;
+    white-space: nowrap;
+  }
+  .role-toggle button[aria-pressed="true"] {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+  .readonly-banner {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 10px 20px;
+    font-size: 13px;
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    border-bottom: 1px solid var(--line);
+  }
+
+  /* ---------- Layout ---------- */
+  .container { max-width: 720px; margin: 0 auto; padding: 20px 20px 80px; }
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+  }
+  .card + .card { margin-top: 16px; }
+  .stack { display: flex; flex-direction: column; gap: 14px; }
+
+  /* ---------- Top-level nav (ロビン表一覧 / 履歴) ---------- */
+  .top-nav {
+    display: flex; gap: 6px; margin-bottom: 18px;
+    border-bottom: 1px solid var(--line);
+  }
+  .top-nav .tab { font-size: 15px; }
+
+  /* ---------- Setup ---------- */
+  .field { display: flex; flex-direction: column; gap: 6px; }
+  .field label { font-size: 12.5px; font-weight: 600; color: var(--ink-soft); text-transform: uppercase; letter-spacing: 0.04em; }
+  .field input[type="text"], .field select, select.field-select {
+    border: 1px solid var(--line);
+    background: var(--bg);
+    color: var(--ink);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 15px;
+    width: 100%;
+  }
+  .add-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .add-row .member-inputs { display: flex; gap: 8px; flex: 1; flex-wrap: wrap; }
+  .add-row input { flex: 1; min-width: 96px; }
+  .add-row input.rating-input { flex: 0 0 90px; min-width: 70px; }
+  .player-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+  .player-chip {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    padding: 6px 6px 6px 12px;
+    font-size: 14px;
+  }
+  .player-chip button {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 15px; line-height: 1; padding: 2px 4px;
+  }
+  .player-chip button:hover { color: var(--red); }
+  .rt-badge { font-size: 11px; color: var(--ink-faint); font-weight: 700; }
+  .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .stepper {
+    display: inline-flex; align-items: center; gap: 0;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    background: var(--bg);
+  }
+  .stepper button {
+    border: none; background: var(--surface-2); color: var(--ink);
+    width: 34px; height: 34px; font-size: 16px; font-weight: 700;
+  }
+  .stepper output {
+    min-width: 36px; text-align: center; font-size: 15px; font-weight: 600;
+  }
+
+  /* ---------- Format segmented control ---------- */
+  .seg { display: flex; gap: 6px; }
+  .seg button {
+    flex: 1; border: 1px solid var(--line); background: var(--bg); color: var(--ink-soft);
+    padding: 10px 8px; border-radius: 8px; font-size: 13.5px; font-weight: 600;
+  }
+  .seg button[aria-pressed="true"] {
+    background: var(--accent); border-color: var(--accent); color: var(--accent-ink);
+  }
+  .format-badge {
+    display: inline-block; font-size: 10.5px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.04em; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+
+  /* ---------- Buttons ---------- */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 9px; border: 1px solid transparent;
+    padding: 11px 18px; font-size: 14.5px; font-weight: 600;
+    transition: transform 0.08s ease;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn-primary { background: var(--accent); color: var(--accent-ink); }
+  .btn-primary:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-ghost { background: transparent; border-color: var(--line); color: var(--ink); }
+  .btn-danger { background: transparent; border-color: var(--red); color: var(--red); }
+  .btn-sm { padding: 7px 12px; font-size: 13px; border-radius: 7px; }
+  .btn-block { width: 100%; }
+
+  /* ---------- Tabs (sub-tabs within a table) ---------- */
+  .tabs {
+    display: flex; gap: 6px; margin-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .tab {
+    background: none; border: none; padding: 10px 4px; margin-right: 18px;
+    font-size: 14px; font-weight: 600; color: var(--ink-faint);
+    border-bottom: 2px solid transparent; margin-bottom: -1px;
+  }
+  .tab.active { color: var(--ink); border-bottom-color: var(--accent); }
+
+  /* ---------- Table list ---------- */
+  .table-list { display: flex; flex-direction: column; gap: 10px; margin-bottom: 16px; }
+  .table-card {
+    border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
+    padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
+  }
+  .table-card .t-info h3 { margin: 0 0 5px; font-size: 17px; }
+  .table-card .t-info .meta { font-size: 12px; color: var(--ink-faint); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+  .table-card .progress { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
+
+  /* ---------- Table detail header ---------- */
+  .t-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin: 10px 0 12px; }
+  .t-head h2 { font-size: 24px; margin: 0 0 4px; }
+  .t-meta { font-size: 12.5px; color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+  .t-meta span { display: inline-flex; align-items: center; gap: 4px; }
+
+  /* ---------- Leg config panel ---------- */
+  .leg-panel {
+    border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px;
+    padding: 10px 14px; margin-bottom: 16px; font-size: 13px;
+  }
+  .leg-panel .leg-summary { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+  .leg-summary-text { color: var(--ink-soft); }
+  .leg-summary-text b { color: var(--ink); font-weight: 700; }
+  .leg-edit-grid { display: flex; flex-direction: column; gap: 10px; margin-top: 10px; }
+  .leg-row { display: flex; align-items: center; gap: 10px; }
+  .leg-row .leg-num { width: 56px; flex-shrink: 0; font-size: 12.5px; font-weight: 700; color: var(--ink-soft); }
+  .leg-row select { flex: 1; }
+
+  /* ---------- Handicap panel ---------- */
+  .handicap-panel { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .handicap-group-label { font-size: 12.5px; font-weight: 700; color: var(--ink-soft); margin-bottom: 6px; }
+  .handicap-row { display: flex; flex-wrap: wrap; gap: 8px; }
+  .handicap-cell { display: flex; flex-direction: column; align-items: center; gap: 4px; width: 52px; flex-shrink: 0; }
+  .handicap-cell-label { font-size: 11px; color: var(--ink-faint); font-weight: 600; }
+  .handicap-input {
+    width: 100%; border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 7px; padding: 6px 4px; font-size: 13px; text-align: center;
+  }
+  .handicap-value { font-size: 13.5px; font-weight: 600; }
+
+  /* ---------- Board strip ---------- */
+  .board-strip { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 18px; }
+  .board-chip {
+    border-radius: 10px; padding: 8px 12px; font-size: 12.5px;
+    border: 1px solid var(--line); min-width: 108px;
+  }
+  .board-chip .label { display: block; font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-faint); margin-bottom: 2px; }
+  .board-chip.free { background: var(--surface); color: var(--ink-soft); }
+  .board-chip.busy { background: var(--green-soft); border-color: var(--green); color: var(--ink); font-weight: 600; }
+
+  /* ---------- Match cards ---------- */
+  .match-card {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 12px;
+    padding: 14px 16px; margin-bottom: 10px;
+  }
+  .match-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+  .match-players { display: flex; align-items: center; gap: 10px; flex: 1; min-width: 0; }
+  .player-name { font-size: 15.5px; font-weight: 600; flex: 1; min-width: 0; overflow-wrap: break-word; }
+  .player-name.winner { color: var(--accent-strong); }
+  .result-mark { display: inline-block; font-weight: 700; font-size: 13px; line-height: 1; margin-right: 3px; }
+  .result-mark.mark-win { color: var(--accent-strong); }
+  .result-mark.mark-lose { color: var(--red); }
+  .vs-dot {
+    flex-shrink: 0; width: 20px; height: 20px; border-radius: 50%;
+    background: radial-gradient(circle, var(--red) 0 30%, var(--surface-2) 30% 55%, var(--green) 55% 78%, var(--surface-2) 78% 100%);
+    border: 1px solid var(--line);
+  }
+  .match-meta { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .status-pill {
+    font-size: 11px; font-weight: 700; padding: 4px 9px; border-radius: 999px;
+    text-transform: uppercase; letter-spacing: 0.03em; white-space: nowrap;
+  }
+  .status-pill.pending { background: var(--surface-2); color: var(--ink-faint); }
+  .status-pill.in_progress { background: var(--accent); color: var(--accent-ink); }
+  .status-pill.done { background: var(--green-soft); color: var(--green); }
+  .match-score { font-size: 13px; color: var(--ink-soft); }
+  .match-body { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .match-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .score-row { display: flex; align-items: center; gap: 10px; }
+  .score-row .name { font-size: 13.5px; width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .board-select {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 7px; padding: 6px 8px; font-size: 13px;
+  }
+  .match-actions { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+
+  /* ---------- Cross table (総当たり表) ---------- */
+  .ct-wrap { margin-bottom: 18px; }
+  .ct-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ct-header-bar { width: 5px; align-self: stretch; min-height: 22px; background: var(--red); border-radius: 3px; flex-shrink: 0; }
+  .ct-title { margin: 0; font-size: 17px; letter-spacing: 0; text-transform: none; }
+  .ct-table { border-collapse: collapse; width: 100%; }
+  .ct-table th, .ct-table td {
+    border: 1px solid var(--line);
+    text-align: center;
+    padding: 0;
+  }
+  .ct-corner { background: var(--surface-2); min-width: 44px; }
+  .ct-colnum {
+    min-width: 76px; padding: 8px 4px !important; font-size: 13.5px; font-weight: 700;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .ct-stat-h {
+    width: 38px; padding: 4px 2px !important; font-size: 9.5px; line-height: 1.25; font-weight: 700; color: var(--ink-faint);
+    background: var(--surface-2); letter-spacing: 0;
+  }
+  .ct-rowlabel {
+    padding: 6px 10px !important; text-align: left !important; white-space: nowrap;
+    background: var(--surface-2); font-weight: 600; font-size: 13px;
+  }
+  .ct-rownum { display: inline-block; min-width: 16px; font-weight: 700; color: var(--ink); margin-right: 6px; }
+  .ct-rowname { color: var(--ink-soft); font-weight: 500; }
+  .ct-cell { width: 76px; height: 40px; position: relative; background: var(--surface); }
+  .ct-cell.diag {
+    background: repeating-linear-gradient(45deg, transparent 0, transparent calc(50% - 1px), var(--line) 50%, transparent calc(50% + 1px), transparent 100%);
+  }
+  .ct-cell.hatched {
+    background:
+      repeating-linear-gradient(45deg, var(--line) 0, var(--line) 1px, transparent 1px, transparent 7px),
+      repeating-linear-gradient(-45deg, var(--line) 0, var(--line) 1px, transparent 1px, transparent 7px);
+    opacity: 0.55;
+  }
+  .ct-cell.fillable.live { background: var(--surface-2); }
+  .ct-cell.fillable.done { background: var(--green-soft); }
+  .ct-cell-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; height: 40px; border: none; background: none;
+    font-size: 11.5px; color: var(--ink-soft); padding: 0 2px; white-space: nowrap;
+  }
+  .ct-cell.done .ct-cell-btn { color: var(--green); font-weight: 700; }
+  .ct-cell.fillable:not(.done):hover { outline: 2px solid var(--accent); outline-offset: -2px; }
+  .ct-cell span.mono {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 100%; height: 40px; font-size: 11.5px; color: var(--ink-faint); white-space: nowrap;
+  }
+  .ct-cell.ct-mirror { opacity: 0.82; }
+  .ct-cell.ct-mirror .ct-cell-btn, .ct-cell.ct-mirror span.mono { color: var(--ink-faint); }
+  .ct-stat { width: 38px; padding: 6px 2px !important; font-size: 12.5px; }
+  .ct-rank { font-weight: 700; }
+  .ct-editor { margin-top: 14px; }
+  .ct-legend {
+    margin-top: 10px; display: flex; align-items: flex-start; gap: 10px;
+    font-size: 12.5px; color: var(--ink-soft);
+  }
+  .ct-legend-tag {
+    flex-shrink: 0; background: var(--red); color: #fff; font-weight: 700;
+    font-size: 11px; padding: 4px 10px; border-radius: 5px; letter-spacing: 0.02em; margin-top: 1px;
+  }
+  .ct-legend-list {
+    flex: 1; min-width: 0; display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 6px 4px;
+  }
+  .ct-legend-item { white-space: nowrap; }
+  .ct-legend-item b { color: var(--ink); font-family: "Space Mono", ui-monospace, monospace; }
+
+  /* ---------- Standings ---------- */
+  .standings-table { width: 100%; border-collapse: collapse; }
+  .table-scroll { overflow-x: auto; }
+  .standings-table th, .standings-table td {
+    padding: 10px 8px; font-size: 13.5px; text-align: left; border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+  }
+  .standings-table th {
+    font-size: 11px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); font-weight: 600;
+  }
+  .standings-table td.num, .standings-table th.num { text-align: right; }
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; border-radius: 50%; font-size: 12px; font-weight: 700;
+    background: var(--surface-2); color: var(--ink-soft);
+  }
+  .rank-badge.r1 { background: var(--accent); color: var(--accent-ink); }
+  .rank-badge.r2 { background: #C6C0AC; color: #2A2618; }
+  .rank-badge.r3 { background: #C89464; color: #2A1B0E; }
+
+  /* ---------- History ---------- */
+  .history-item { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 10px; background: var(--surface); }
+  .history-item summary { cursor: pointer; list-style: none; display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .history-item summary::-webkit-details-marker { display: none; }
+  .history-item h3 { font-size: 16px; margin: 0 0 4px; }
+  .history-item .h-date { font-size: 12px; color: var(--ink-faint); }
+  .history-item .h-winner { font-size: 13px; color: var(--accent-strong); font-weight: 600; }
+  .history-standings { margin-top: 12px; padding-top: 12px; border-top: 1px dashed var(--line); }
+  .history-actions { margin-top: 10px; }
+
+  /* ---------- Misc ---------- */
+  .empty-state { text-align: center; padding: 36px 16px; color: var(--ink-soft); }
+  .empty-state .icon { font-size: 30px; margin-bottom: 10px; }
+  .muted { color: var(--ink-soft); font-size: 13px; }
+  .section-title { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-faint); font-weight: 700; margin: 24px 0 10px; }
+  .divider { border: none; border-top: 1px solid var(--line); margin: 20px 0; }
+
+  /* ---------- Tournament bracket ---------- */
+  .trn-source-list { display: flex; flex-direction: column; gap: 8px; }
+  .trn-source-row {
+    display: flex; align-items: center; gap: 10px; text-align: left; width: 100%;
+    border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 10px 12px;
+  }
+  .trn-source-row.checked { background: var(--green-soft); border-color: var(--green); }
+  .trn-source-check { font-size: 18px; flex-shrink: 0; }
+  .trn-source-info { display: flex; flex-direction: column; gap: 2px; font-size: 14px; }
+  .trn-source-info b { font-weight: 600; }
+  .trn-manual-list { display: flex; flex-direction: column; gap: 8px; }
+  .trn-manual-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    border: 1px solid var(--line); background: var(--bg); border-radius: 10px; padding: 8px 12px;
+  }
+  .trn-manual-row.dup { border-color: var(--red); background: rgba(220, 38, 38, 0.08); }
+  .trn-manual-name { font-size: 14px; font-weight: 600; display: flex; flex-direction: column; gap: 2px; flex: 1 1 auto; min-width: 0; }
+  .field select.trn-manual-select {
+    border: 1px solid var(--line); background: var(--surface); color: var(--ink);
+    border-radius: 8px; padding: 6px 8px; font-size: 14px; min-width: 56px; width: auto; flex: 0 0 auto;
+  }
+  .trn-section { margin-bottom: 18px; }
+  .trn-seed-tag { font-size: 10.5px; color: var(--ink-faint); }
+  .bracket-diagram-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; margin: 0 -16px 18px; padding: 6px 16px 18px; min-height: 60px; }
+  .bracket-diagram { display: grid; width: max-content; column-gap: 20px; }
+  .bracket-round-title { grid-row: 1; align-self: end; text-align: center; font-size: 11px; font-weight: 700; color: var(--ink-faint); margin-bottom: 6px; letter-spacing: 0.02em; white-space: nowrap; }
+  .bracket-match-slot { display: flex; flex-direction: column; justify-content: center; position: relative; padding-right: 20px; }
+  .bracket-team-box {
+    border: 1.5px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink);
+    padding: 5px 8px; font-size: 12px; line-height: 1.3; margin: 2px 0;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 108px;
+  }
+  .bracket-team-box.winner { border-color: var(--accent); background: color-mix(in srgb, var(--accent) 16%, var(--surface)); color: var(--accent-strong); font-weight: 700; }
+  .bracket-team-box.pending { color: var(--ink-faint); font-style: italic; border-style: dashed; }
+  .bracket-match-slot.conn-top::after {
+    content: ""; position: absolute; top: 50%; bottom: 0; right: 2px; width: 18px;
+    border-top: 2px solid var(--line); border-right: 2px solid var(--line);
+  }
+  .bracket-match-slot.conn-bottom::after {
+    content: ""; position: absolute; top: 0; bottom: 50%; right: 2px; width: 18px;
+    border-bottom: 2px solid var(--line); border-right: 2px solid var(--line);
+  }
+  .bracket-match-slot.conn-final::after {
+    content: ""; position: absolute; top: 50%; right: 2px; width: 18px; height: 0; border-top: 2px solid var(--line);
+  }
+  .bracket-champion-col { display: flex; flex-direction: column; justify-content: center; padding-left: 6px; min-width: 110px; }
+  .bracket-champion-box {
+    border: 2px solid var(--accent); background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--accent-strong);
+    border-radius: 8px; padding: 10px 14px; font-weight: 800; font-size: 13px; text-align: center; white-space: nowrap;
+  }
+  .bracket-champion-box.pending { border-style: dashed; background: transparent; color: var(--ink-faint); font-weight: 600; }
+
+  /* ---------- Password gate / QR share panel ---------- */
+  .password-banner { display: flex; flex-direction: column; gap: 8px; }
+  .password-label { font-weight: 600; color: var(--ink); }
+  .password-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .password-input {
+    border: 1px solid var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 8px; padding: 8px 10px; font-size: 15px; width: 120px;
+    letter-spacing: 0.12em;
+  }
+  .password-error { color: var(--red); font-size: 12.5px; font-weight: 600; width: 100%; }
+  .qr-panel { margin-top: 10px; display: flex; flex-direction: column; align-items: center; gap: 8px; text-align: center; }
+  .qr-caption { margin: 0; font-size: 12.5px; color: var(--ink-soft); max-width: 320px; }
+  .qr-code-box { background: #fff; padding: 10px; border-radius: 10px; width: 132px; box-shadow: var(--shadow); }
+  .qr-code-box svg { display: block; width: 100%; height: auto; }
+  .qr-url { margin: 0; font-size: 11px; color: var(--ink-faint); word-break: break-all; max-width: 280px; }
+
+  .toast-wrap {
+    position: fixed; bottom: 18px; left: 50%; transform: translateX(-50%);
+    z-index: 50; display: flex; flex-direction: column; gap: 8px; align-items: center;
+    pointer-events: none; width: 100%; padding: 0 16px;
+  }
+  .toast {
+    background: var(--ink); color: var(--bg);
+    padding: 10px 16px; border-radius: 999px; font-size: 13.5px;
+    box-shadow: var(--shadow); max-width: 420px; text-align: center;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+
+  @media (max-width: 480px) {
+    .row-2 { grid-template-columns: 1fr; }
+    .brand-text h1 { font-size: 19px; }
+    .score-row .name { width: 68px; }
+    .table-card { flex-direction: column; align-items: stretch; }
+  }
+</style>`;
+
+  // Verbatim copy of a minified build of qrcode-generator (MIT, (c) Kazuhiko
+  // Arase) so the "閲覧QRコード" below works fully offline / self-contained,
+  // matching this file's existing no-external-network-script convention.
+  var QR_LIB_SRC = `var qrcode=function(){var t=function(t,r){var e=t,n=g[r],o=null,i=0,a=null,u=[],f={},c=function(t,r){o=function(t){for(var r=new Array(t),e=0;e<t;e+=1){r[e]=new Array(t);for(var n=0;n<t;n+=1)r[e][n]=null}return r}(i=4*e+17),l(0,0),l(i-7,0),l(0,i-7),s(),h(),d(t,r),e>=7&&v(t),null==a&&(a=p(e,n,u)),w(a,r)},l=function(t,r){for(var e=-1;e<=7;e+=1)if(!(t+e<=-1||i<=t+e))for(var n=-1;n<=7;n+=1)r+n<=-1||i<=r+n||(o[t+e][r+n]=0<=e&&e<=6&&(0==n||6==n)||0<=n&&n<=6&&(0==e||6==e)||2<=e&&e<=4&&2<=n&&n<=4)},h=function(){for(var t=8;t<i-8;t+=1)null==o[t][6]&&(o[t][6]=t%2==0);for(var r=8;r<i-8;r+=1)null==o[6][r]&&(o[6][r]=r%2==0)},s=function(){for(var t=B.getPatternPosition(e),r=0;r<t.length;r+=1)for(var n=0;n<t.length;n+=1){var i=t[r],a=t[n];if(null==o[i][a])for(var u=-2;u<=2;u+=1)for(var f=-2;f<=2;f+=1)o[i+u][a+f]=-2==u||2==u||-2==f||2==f||0==u&&0==f}},v=function(t){for(var r=B.getBCHTypeNumber(e),n=0;n<18;n+=1){var a=!t&&1==(r>>n&1);o[Math.floor(n/3)][n%3+i-8-3]=a}for(n=0;n<18;n+=1){a=!t&&1==(r>>n&1);o[n%3+i-8-3][Math.floor(n/3)]=a}},d=function(t,r){for(var e=n<<3|r,a=B.getBCHTypeInfo(e),u=0;u<15;u+=1){var f=!t&&1==(a>>u&1);u<6?o[u][8]=f:u<8?o[u+1][8]=f:o[i-15+u][8]=f}for(u=0;u<15;u+=1){f=!t&&1==(a>>u&1);u<8?o[8][i-u-1]=f:u<9?o[8][15-u-1+1]=f:o[8][15-u-1]=f}o[i-8][8]=!t},w=function(t,r){for(var e=-1,n=i-1,a=7,u=0,f=B.getMaskFunction(r),c=i-1;c>0;c-=2)for(6==c&&(c-=1);;){for(var g=0;g<2;g+=1)if(null==o[n][c-g]){var l=!1;u<t.length&&(l=1==(t[u]>>>a&1)),f(n,c-g)&&(l=!l),o[n][c-g]=l,-1==(a-=1)&&(u+=1,a=7)}if((n+=e)<0||i<=n){n-=e,e=-e;break}}},p=function(t,r,e){for(var n=A.getRSBlocks(t,r),o=b(),i=0;i<e.length;i+=1){var a=e[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var u=0;for(i=0;i<n.length;i+=1)u+=n[i].dataCount;if(o.getLengthInBits()>8*u)throw"code length overflow. ("+o.getLengthInBits()+">"+8*u+")";for(o.getLengthInBits()+4<=8*u&&o.put(0,4);o.getLengthInBits()%8!=0;)o.putBit(!1);for(;!(o.getLengthInBits()>=8*u||(o.put(236,8),o.getLengthInBits()>=8*u));)o.put(17,8);return function(t,r){for(var e=0,n=0,o=0,i=new Array(r.length),a=new Array(r.length),u=0;u<r.length;u+=1){var f=r[u].dataCount,c=r[u].totalCount-f;n=Math.max(n,f),o=Math.max(o,c),i[u]=new Array(f);for(var g=0;g<i[u].length;g+=1)i[u][g]=255&t.getBuffer()[g+e];e+=f;var l=B.getErrorCorrectPolynomial(c),h=k(i[u],l.getLength()-1).mod(l);for(a[u]=new Array(l.getLength()-1),g=0;g<a[u].length;g+=1){var s=g+h.getLength()-a[u].length;a[u][g]=s>=0?h.getAt(s):0}}var v=0;for(g=0;g<r.length;g+=1)v+=r[g].totalCount;var d=new Array(v),w=0;for(g=0;g<n;g+=1)for(u=0;u<r.length;u+=1)g<i[u].length&&(d[w]=i[u][g],w+=1);for(g=0;g<o;g+=1)for(u=0;u<r.length;u+=1)g<a[u].length&&(d[w]=a[u][g],w+=1);return d}(o,n)};f.addData=function(t,r){var e=null;switch(r=r||"Byte"){case"Numeric":e=M(t);break;case"Alphanumeric":e=x(t);break;case"Byte":e=m(t);break;case"Kanji":e=L(t);break;default:throw"mode:"+r}u.push(e),a=null},f.isDark=function(t,r){if(t<0||i<=t||r<0||i<=r)throw t+","+r;return o[t][r]},f.getModuleCount=function(){return i},f.make=function(){if(e<1){for(var t=1;t<40;t++){for(var r=A.getRSBlocks(t,n),o=b(),i=0;i<u.length;i++){var a=u[i];o.put(a.getMode(),4),o.put(a.getLength(),B.getLengthInBits(a.getMode(),t)),a.write(o)}var g=0;for(i=0;i<r.length;i++)g+=r[i].dataCount;if(o.getLengthInBits()<=8*g)break}e=t}c(!1,function(){for(var t=0,r=0,e=0;e<8;e+=1){c(!0,e);var n=B.getLostPoint(f);(0==e||t>n)&&(t=n,r=e)}return r}())},f.createTableTag=function(t,r){t=t||2;var e="";e+='<table style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: "+(r=void 0===r?4*t:r)+"px;",e+='">',e+="<tbody>";for(var n=0;n<f.getModuleCount();n+=1){e+="<tr>";for(var o=0;o<f.getModuleCount();o+=1)e+='<td style="',e+=" border-width: 0px; border-style: none;",e+=" border-collapse: collapse;",e+=" padding: 0px; margin: 0px;",e+=" width: "+t+"px;",e+=" height: "+t+"px;",e+=" background-color: ",e+=f.isDark(n,o)?"#000000":"#ffffff",e+=";",e+='"/>';e+="</tr>"}return e+="</tbody>",e+="</table>"},f.createSvgTag=function(t,r,e,n){var o={};"object"==typeof arguments[0]&&(t=(o=arguments[0]).cellSize,r=o.margin,e=o.alt,n=o.title),t=t||2,r=void 0===r?4*t:r,(e="string"==typeof e?{text:e}:e||{}).text=e.text||null,e.id=e.text?e.id||"qrcode-description":null,(n="string"==typeof n?{text:n}:n||{}).text=n.text||null,n.id=n.text?n.id||"qrcode-title":null;var i,a,u,c,g=f.getModuleCount()*t+2*r,l="";for(c="l"+t+",0 0,"+t+" -"+t+",0 0,-"+t+"z ",l+='<svg version="1.1" xmlns="http://www.w3.org/2000/svg"',l+=o.scalable?"":' width="'+g+'px" height="'+g+'px"',l+=' viewBox="0 0 '+g+" "+g+'" ',l+=' preserveAspectRatio="xMinYMin meet"',l+=n.text||e.text?' role="img" aria-labelledby="'+y([n.id,e.id].join(" ").trim())+'"':"",l+=">",l+=n.text?'<title id="'+y(n.id)+'">'+y(n.text)+"</title>":"",l+=e.text?'<description id="'+y(e.id)+'">'+y(e.text)+"</description>":"",l+='<rect width="100%" height="100%" fill="white" cx="0" cy="0"/>',l+='<path d="',a=0;a<f.getModuleCount();a+=1)for(u=a*t+r,i=0;i<f.getModuleCount();i+=1)f.isDark(a,i)&&(l+="M"+(i*t+r)+","+u+c);return l+='" stroke="transparent" fill="black"/>',l+="</svg>"},f.createDataURL=function(t,r){t=t||2,r=void 0===r?4*t:r;var e=f.getModuleCount()*t+2*r,n=r,o=e-r;return I(e,e,function(r,e){if(n<=r&&r<o&&n<=e&&e<o){var i=Math.floor((r-n)/t),a=Math.floor((e-n)/t);return f.isDark(a,i)?0:1}return 1})},f.createImgTag=function(t,r,e){t=t||2,r=void 0===r?4*t:r;var n=f.getModuleCount()*t+2*r,o="";return o+="<img",o+=' src="',o+=f.createDataURL(t,r),o+='"',o+=' width="',o+=n,o+='"',o+=' height="',o+=n,o+='"',e&&(o+=' alt="',o+=y(e),o+='"'),o+="/>"};var y=function(t){for(var r="",e=0;e<t.length;e+=1){var n=t.charAt(e);switch(n){case"<":r+="&lt;";break;case">":r+="&gt;";break;case"&":r+="&amp;";break;case'"':r+="&quot;";break;default:r+=n}}return r};return f.createASCII=function(t,r){if((t=t||1)<2)return function(t){t=void 0===t?2:t;var r,e,n,o,i,a=1*f.getModuleCount()+2*t,u=t,c=a-t,g={"██":"█","█ ":"▀"," █":"▄","  ":" "},l={"██":"▀","█ ":"▀"," █":" ","  ":" "},h="";for(r=0;r<a;r+=2){for(n=Math.floor((r-u)/1),o=Math.floor((r+1-u)/1),e=0;e<a;e+=1)i="█",u<=e&&e<c&&u<=r&&r<c&&f.isDark(n,Math.floor((e-u)/1))&&(i=" "),u<=e&&e<c&&u<=r+1&&r+1<c&&f.isDark(o,Math.floor((e-u)/1))?i+=" ":i+="█",h+=t<1&&r+1>=c?l[i]:g[i];h+="\\n"}return a%2&&t>0?h.substring(0,h.length-a-1)+Array(a+1).join("▀"):h.substring(0,h.length-1)}(r);t-=1,r=void 0===r?2*t:r;var e,n,o,i,a=f.getModuleCount()*t+2*r,u=r,c=a-r,g=Array(t+1).join("██"),l=Array(t+1).join("  "),h="",s="";for(e=0;e<a;e+=1){for(o=Math.floor((e-u)/t),s="",n=0;n<a;n+=1)i=1,u<=n&&n<c&&u<=e&&e<c&&f.isDark(o,Math.floor((n-u)/t))&&(i=0),s+=i?g:l;for(o=0;o<t;o+=1)h+=s+"\\n"}return h.substring(0,h.length-1)},f.renderTo2dContext=function(t,r){r=r||2;for(var e=f.getModuleCount(),n=0;n<e;n++)for(var o=0;o<e;o++)t.fillStyle=f.isDark(n,o)?"black":"white",t.fillRect(o*r,n*r,r,r)},f};t.stringToBytes=(t.stringToBytesFuncs={default:function(t){for(var r=[],e=0;e<t.length;e+=1){var n=t.charCodeAt(e);r.push(255&n)}return r}}).default,t.createStringToBytes=function(t,r){var e=function(){for(var e=S(t),n=function(){var t=e.read();if(-1==t)throw"eof";return t},o=0,i={};;){var a=e.read();if(-1==a)break;var u=n(),f=n()<<8|n();i[String.fromCharCode(a<<8|u)]=f,o+=1}if(o!=r)throw o+" != "+r;return i}(),n="?".charCodeAt(0);return function(t){for(var r=[],o=0;o<t.length;o+=1){var i=t.charCodeAt(o);if(i<128)r.push(i);else{var a=e[t.charAt(o)];"number"==typeof a?(255&a)==a?r.push(a):(r.push(a>>>8),r.push(255&a)):r.push(n)}}return r}};var r,e,n,o,i,a=1,u=2,f=4,c=8,g={L:1,M:0,Q:3,H:2},l=0,h=1,s=2,v=3,d=4,w=5,p=6,y=7,B=(r=[[],[6,18],[6,22],[6,26],[6,30],[6,34],[6,22,38],[6,24,42],[6,26,46],[6,28,50],[6,30,54],[6,32,58],[6,34,62],[6,26,46,66],[6,26,48,70],[6,26,50,74],[6,30,54,78],[6,30,56,82],[6,30,58,86],[6,34,62,90],[6,28,50,72,94],[6,26,50,74,98],[6,30,54,78,102],[6,28,54,80,106],[6,32,58,84,110],[6,30,58,86,114],[6,34,62,90,118],[6,26,50,74,98,122],[6,30,54,78,102,126],[6,26,52,78,104,130],[6,30,56,82,108,134],[6,34,60,86,112,138],[6,30,58,86,114,142],[6,34,62,90,118,146],[6,30,54,78,102,126,150],[6,24,50,76,102,128,154],[6,28,54,80,106,132,158],[6,32,58,84,110,136,162],[6,26,54,82,110,138,166],[6,30,58,86,114,142,170]],e=1335,n=7973,i=function(t){for(var r=0;0!=t;)r+=1,t>>>=1;return r},(o={}).getBCHTypeInfo=function(t){for(var r=t<<10;i(r)-i(e)>=0;)r^=e<<i(r)-i(e);return 21522^(t<<10|r)},o.getBCHTypeNumber=function(t){for(var r=t<<12;i(r)-i(n)>=0;)r^=n<<i(r)-i(n);return t<<12|r},o.getPatternPosition=function(t){return r[t-1]},o.getMaskFunction=function(t){switch(t){case l:return function(t,r){return(t+r)%2==0};case h:return function(t,r){return t%2==0};case s:return function(t,r){return r%3==0};case v:return function(t,r){return(t+r)%3==0};case d:return function(t,r){return(Math.floor(t/2)+Math.floor(r/3))%2==0};case w:return function(t,r){return t*r%2+t*r%3==0};case p:return function(t,r){return(t*r%2+t*r%3)%2==0};case y:return function(t,r){return(t*r%3+(t+r)%2)%2==0};default:throw"bad maskPattern:"+t}},o.getErrorCorrectPolynomial=function(t){for(var r=k([1],0),e=0;e<t;e+=1)r=r.multiply(k([1,C.gexp(e)],0));return r},o.getLengthInBits=function(t,r){if(1<=r&&r<10)switch(t){case a:return 10;case u:return 9;case f:case c:return 8;default:throw"mode:"+t}else if(r<27)switch(t){case a:return 12;case u:return 11;case f:return 16;case c:return 10;default:throw"mode:"+t}else{if(!(r<41))throw"type:"+r;switch(t){case a:return 14;case u:return 13;case f:return 16;case c:return 12;default:throw"mode:"+t}}},o.getLostPoint=function(t){for(var r=t.getModuleCount(),e=0,n=0;n<r;n+=1)for(var o=0;o<r;o+=1){for(var i=0,a=t.isDark(n,o),u=-1;u<=1;u+=1)if(!(n+u<0||r<=n+u))for(var f=-1;f<=1;f+=1)o+f<0||r<=o+f||0==u&&0==f||a==t.isDark(n+u,o+f)&&(i+=1);i>5&&(e+=3+i-5)}for(n=0;n<r-1;n+=1)for(o=0;o<r-1;o+=1){var c=0;t.isDark(n,o)&&(c+=1),t.isDark(n+1,o)&&(c+=1),t.isDark(n,o+1)&&(c+=1),t.isDark(n+1,o+1)&&(c+=1),0!=c&&4!=c||(e+=3)}for(n=0;n<r;n+=1)for(o=0;o<r-6;o+=1)t.isDark(n,o)&&!t.isDark(n,o+1)&&t.isDark(n,o+2)&&t.isDark(n,o+3)&&t.isDark(n,o+4)&&!t.isDark(n,o+5)&&t.isDark(n,o+6)&&(e+=40);for(o=0;o<r;o+=1)for(n=0;n<r-6;n+=1)t.isDark(n,o)&&!t.isDark(n+1,o)&&t.isDark(n+2,o)&&t.isDark(n+3,o)&&t.isDark(n+4,o)&&!t.isDark(n+5,o)&&t.isDark(n+6,o)&&(e+=40);var g=0;for(o=0;o<r;o+=1)for(n=0;n<r;n+=1)t.isDark(n,o)&&(g+=1);return e+=Math.abs(100*g/r/r-50)/5*10},o),C=function(){for(var t=new Array(256),r=new Array(256),e=0;e<8;e+=1)t[e]=1<<e;for(e=8;e<256;e+=1)t[e]=t[e-4]^t[e-5]^t[e-6]^t[e-8];for(e=0;e<255;e+=1)r[t[e]]=e;var n={glog:function(t){if(t<1)throw"glog("+t+")";return r[t]},gexp:function(r){for(;r<0;)r+=255;for(;r>=256;)r-=255;return t[r]}};return n}();function k(t,r){if(void 0===t.length)throw t.length+"/"+r;var e=function(){for(var e=0;e<t.length&&0==t[e];)e+=1;for(var n=new Array(t.length-e+r),o=0;o<t.length-e;o+=1)n[o]=t[o+e];return n}(),n={getAt:function(t){return e[t]},getLength:function(){return e.length},multiply:function(t){for(var r=new Array(n.getLength()+t.getLength()-1),e=0;e<n.getLength();e+=1)for(var o=0;o<t.getLength();o+=1)r[e+o]^=C.gexp(C.glog(n.getAt(e))+C.glog(t.getAt(o)));return k(r,0)},mod:function(t){if(n.getLength()-t.getLength()<0)return n;for(var r=C.glog(n.getAt(0))-C.glog(t.getAt(0)),e=new Array(n.getLength()),o=0;o<n.getLength();o+=1)e[o]=n.getAt(o);for(o=0;o<t.getLength();o+=1)e[o]^=C.gexp(C.glog(t.getAt(o))+r);return k(e,0).mod(t)}};return n}var A=function(){var t=[[1,26,19],[1,26,16],[1,26,13],[1,26,9],[1,44,34],[1,44,28],[1,44,22],[1,44,16],[1,70,55],[1,70,44],[2,35,17],[2,35,13],[1,100,80],[2,50,32],[2,50,24],[4,25,9],[1,134,108],[2,67,43],[2,33,15,2,34,16],[2,33,11,2,34,12],[2,86,68],[4,43,27],[4,43,19],[4,43,15],[2,98,78],[4,49,31],[2,32,14,4,33,15],[4,39,13,1,40,14],[2,121,97],[2,60,38,2,61,39],[4,40,18,2,41,19],[4,40,14,2,41,15],[2,146,116],[3,58,36,2,59,37],[4,36,16,4,37,17],[4,36,12,4,37,13],[2,86,68,2,87,69],[4,69,43,1,70,44],[6,43,19,2,44,20],[6,43,15,2,44,16],[4,101,81],[1,80,50,4,81,51],[4,50,22,4,51,23],[3,36,12,8,37,13],[2,116,92,2,117,93],[6,58,36,2,59,37],[4,46,20,6,47,21],[7,42,14,4,43,15],[4,133,107],[8,59,37,1,60,38],[8,44,20,4,45,21],[12,33,11,4,34,12],[3,145,115,1,146,116],[4,64,40,5,65,41],[11,36,16,5,37,17],[11,36,12,5,37,13],[5,109,87,1,110,88],[5,65,41,5,66,42],[5,54,24,7,55,25],[11,36,12,7,37,13],[5,122,98,1,123,99],[7,73,45,3,74,46],[15,43,19,2,44,20],[3,45,15,13,46,16],[1,135,107,5,136,108],[10,74,46,1,75,47],[1,50,22,15,51,23],[2,42,14,17,43,15],[5,150,120,1,151,121],[9,69,43,4,70,44],[17,50,22,1,51,23],[2,42,14,19,43,15],[3,141,113,4,142,114],[3,70,44,11,71,45],[17,47,21,4,48,22],[9,39,13,16,40,14],[3,135,107,5,136,108],[3,67,41,13,68,42],[15,54,24,5,55,25],[15,43,15,10,44,16],[4,144,116,4,145,117],[17,68,42],[17,50,22,6,51,23],[19,46,16,6,47,17],[2,139,111,7,140,112],[17,74,46],[7,54,24,16,55,25],[34,37,13],[4,151,121,5,152,122],[4,75,47,14,76,48],[11,54,24,14,55,25],[16,45,15,14,46,16],[6,147,117,4,148,118],[6,73,45,14,74,46],[11,54,24,16,55,25],[30,46,16,2,47,17],[8,132,106,4,133,107],[8,75,47,13,76,48],[7,54,24,22,55,25],[22,45,15,13,46,16],[10,142,114,2,143,115],[19,74,46,4,75,47],[28,50,22,6,51,23],[33,46,16,4,47,17],[8,152,122,4,153,123],[22,73,45,3,74,46],[8,53,23,26,54,24],[12,45,15,28,46,16],[3,147,117,10,148,118],[3,73,45,23,74,46],[4,54,24,31,55,25],[11,45,15,31,46,16],[7,146,116,7,147,117],[21,73,45,7,74,46],[1,53,23,37,54,24],[19,45,15,26,46,16],[5,145,115,10,146,116],[19,75,47,10,76,48],[15,54,24,25,55,25],[23,45,15,25,46,16],[13,145,115,3,146,116],[2,74,46,29,75,47],[42,54,24,1,55,25],[23,45,15,28,46,16],[17,145,115],[10,74,46,23,75,47],[10,54,24,35,55,25],[19,45,15,35,46,16],[17,145,115,1,146,116],[14,74,46,21,75,47],[29,54,24,19,55,25],[11,45,15,46,46,16],[13,145,115,6,146,116],[14,74,46,23,75,47],[44,54,24,7,55,25],[59,46,16,1,47,17],[12,151,121,7,152,122],[12,75,47,26,76,48],[39,54,24,14,55,25],[22,45,15,41,46,16],[6,151,121,14,152,122],[6,75,47,34,76,48],[46,54,24,10,55,25],[2,45,15,64,46,16],[17,152,122,4,153,123],[29,74,46,14,75,47],[49,54,24,10,55,25],[24,45,15,46,46,16],[4,152,122,18,153,123],[13,74,46,32,75,47],[48,54,24,14,55,25],[42,45,15,32,46,16],[20,147,117,4,148,118],[40,75,47,7,76,48],[43,54,24,22,55,25],[10,45,15,67,46,16],[19,148,118,6,149,119],[18,75,47,31,76,48],[34,54,24,34,55,25],[20,45,15,61,46,16]],r=function(t,r){var e={};return e.totalCount=t,e.dataCount=r,e},e={};return e.getRSBlocks=function(e,n){var o=function(r,e){switch(e){case g.L:return t[4*(r-1)+0];case g.M:return t[4*(r-1)+1];case g.Q:return t[4*(r-1)+2];case g.H:return t[4*(r-1)+3];default:return}}(e,n);if(void 0===o)throw"bad rs block @ typeNumber:"+e+"/errorCorrectionLevel:"+n;for(var i=o.length/3,a=[],u=0;u<i;u+=1)for(var f=o[3*u+0],c=o[3*u+1],l=o[3*u+2],h=0;h<f;h+=1)a.push(r(c,l));return a},e}(),b=function(){var t=[],r=0,e={getBuffer:function(){return t},getAt:function(r){var e=Math.floor(r/8);return 1==(t[e]>>>7-r%8&1)},put:function(t,r){for(var n=0;n<r;n+=1)e.putBit(1==(t>>>r-n-1&1))},getLengthInBits:function(){return r},putBit:function(e){var n=Math.floor(r/8);t.length<=n&&t.push(0),e&&(t[n]|=128>>>r%8),r+=1}};return e},M=function(t){var r=a,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+2<r.length;)t.put(o(r.substring(n,n+3)),10),n+=3;n<r.length&&(r.length-n==1?t.put(o(r.substring(n,n+1)),4):r.length-n==2&&t.put(o(r.substring(n,n+2)),7))}},o=function(t){for(var r=0,e=0;e<t.length;e+=1)r=10*r+i(t.charAt(e));return r},i=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);throw"illegal char :"+t};return n},x=function(t){var r=u,e=t,n={getMode:function(){return r},getLength:function(t){return e.length},write:function(t){for(var r=e,n=0;n+1<r.length;)t.put(45*o(r.charAt(n))+o(r.charAt(n+1)),11),n+=2;n<r.length&&t.put(o(r.charAt(n)),6)}},o=function(t){if("0"<=t&&t<="9")return t.charCodeAt(0)-"0".charCodeAt(0);if("A"<=t&&t<="Z")return t.charCodeAt(0)-"A".charCodeAt(0)+10;switch(t){case" ":return 36;case"$":return 37;case"%":return 38;case"*":return 39;case"+":return 40;case"-":return 41;case".":return 42;case"/":return 43;case":":return 44;default:throw"illegal char :"+t}};return n},m=function(r){var e=f,n=t.stringToBytes(r),o={getMode:function(){return e},getLength:function(t){return n.length},write:function(t){for(var r=0;r<n.length;r+=1)t.put(n[r],8)}};return o},L=function(r){var e=c,n=t.stringToBytesFuncs.SJIS;if(!n)throw"sjis not supported.";!function(){var t=n("友");if(2!=t.length||38726!=(t[0]<<8|t[1]))throw"sjis not supported."}();var o=n(r),i={getMode:function(){return e},getLength:function(t){return~~(o.length/2)},write:function(t){for(var r=o,e=0;e+1<r.length;){var n=(255&r[e])<<8|255&r[e+1];if(33088<=n&&n<=40956)n-=33088;else{if(!(57408<=n&&n<=60351))throw"illegal char at "+(e+1)+"/"+n;n-=49472}n=192*(n>>>8&255)+(255&n),t.put(n,13),e+=2}if(e<r.length)throw"illegal char at "+(e+1)}};return i},D=function(){var t=[],r={writeByte:function(r){t.push(255&r)},writeShort:function(t){r.writeByte(t),r.writeByte(t>>>8)},writeBytes:function(t,e,n){e=e||0,n=n||t.length;for(var o=0;o<n;o+=1)r.writeByte(t[o+e])},writeString:function(t){for(var e=0;e<t.length;e+=1)r.writeByte(t.charCodeAt(e))},toByteArray:function(){return t},toString:function(){var r="";r+="[";for(var e=0;e<t.length;e+=1)e>0&&(r+=","),r+=t[e];return r+="]"}};return r},S=function(t){var r=t,e=0,n=0,o=0,i={read:function(){for(;o<8;){if(e>=r.length){if(0==o)return-1;throw"unexpected end of file./"+o}var t=r.charAt(e);if(e+=1,"="==t)return o=0,-1;t.match(/^\\s$/)||(n=n<<6|a(t.charCodeAt(0)),o+=6)}var i=n>>>o-8&255;return o-=8,i}},a=function(t){if(65<=t&&t<=90)return t-65;if(97<=t&&t<=122)return t-97+26;if(48<=t&&t<=57)return t-48+52;if(43==t)return 62;if(47==t)return 63;throw"c:"+t};return i},I=function(t,r,e){for(var n=function(t,r){var e=t,n=r,o=new Array(t*r),i={setPixel:function(t,r,n){o[r*e+t]=n},write:function(t){t.writeString("GIF87a"),t.writeShort(e),t.writeShort(n),t.writeByte(128),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(0),t.writeByte(255),t.writeByte(255),t.writeByte(255),t.writeString(","),t.writeShort(0),t.writeShort(0),t.writeShort(e),t.writeShort(n),t.writeByte(0);var r=a(2);t.writeByte(2);for(var o=0;r.length-o>255;)t.writeByte(255),t.writeBytes(r,o,255),o+=255;t.writeByte(r.length-o),t.writeBytes(r,o,r.length-o),t.writeByte(0),t.writeString(";")}},a=function(t){for(var r=1<<t,e=1+(1<<t),n=t+1,i=u(),a=0;a<r;a+=1)i.add(String.fromCharCode(a));i.add(String.fromCharCode(r)),i.add(String.fromCharCode(e));var f,c,g,l=D(),h=(f=l,c=0,g=0,{write:function(t,r){if(t>>>r!=0)throw"length over";for(;c+r>=8;)f.writeByte(255&(t<<c|g)),r-=8-c,t>>>=8-c,g=0,c=0;g|=t<<c,c+=r},flush:function(){c>0&&f.writeByte(g)}});h.write(r,n);var s=0,v=String.fromCharCode(o[s]);for(s+=1;s<o.length;){var d=String.fromCharCode(o[s]);s+=1,i.contains(v+d)?v+=d:(h.write(i.indexOf(v),n),i.size()<4095&&(i.size()==1<<n&&(n+=1),i.add(v+d)),v=d)}return h.write(i.indexOf(v),n),h.write(e,n),h.flush(),l.toByteArray()},u=function(){var t={},r=0,e={add:function(n){if(e.contains(n))throw"dup key:"+n;t[n]=r,r+=1},size:function(){return r},indexOf:function(r){return t[r]},contains:function(r){return void 0!==t[r]}};return e};return i}(t,r),o=0;o<r;o+=1)for(var i=0;i<t;i+=1)n.setPixel(i,o,e(i,o));var a=D();n.write(a);for(var u=function(){var t=0,r=0,e=0,n="",o={},i=function(t){n+=String.fromCharCode(a(63&t))},a=function(t){if(t<0);else{if(t<26)return 65+t;if(t<52)return t-26+97;if(t<62)return t-52+48;if(62==t)return 43;if(63==t)return 47}throw"n:"+t};return o.writeByte=function(n){for(t=t<<8|255&n,r+=8,e+=1;r>=6;)i(t>>>r-6),r-=6},o.flush=function(){if(r>0&&(i(t<<6-r),t=0,r=0),e%3!=0)for(var o=3-e%3,a=0;a<o;a+=1)n+="="},o.toString=function(){return n},o}(),f=a.toByteArray(),c=0;c<f.length;c+=1)u.writeByte(f[c]);return u.flush(),"data:image/gif;base64,"+u};return t}();qrcode.stringToBytesFuncs["UTF-8"]=function(t){return function(t){for(var r=[],e=0;e<t.length;e++){var n=t.charCodeAt(e);n<128?r.push(n):n<2048?r.push(192|n>>6,128|63&n):n<55296||n>=57344?r.push(224|n>>12,128|n>>6&63,128|63&n):(e++,n=65536+((1023&n)<<10|1023&t.charCodeAt(e)),r.push(240|n>>18,128|n>>12&63,128|n>>6&63,128|63&n))}return r}(t)},function(t){"function"==typeof define&&define.amd?define([],t):"object"==typeof exports&&(module.exports=t())}(function(){return qrcode});`;
+  var QR_LIB_BLOCK = '<script id="qrcode-lib">' + QR_LIB_SRC + '<\/script>';
+
+  // The shareable, public URL — used for the "読み取ってリアルタイム閲覧" QR
+  // code. Derived from the page's own address, since this is now a normal
+  // standalone web page (not embedded in a viewer frame), so it always
+  // matches wherever this file is actually hosted.
+  var SHARE_URL = (window.location.origin + window.location.pathname).split(/[?#]/)[0];
+  var QR_SVG = (function () {
+    try {
+      var qr = qrcode(0, "M");
+      qr.addData(SHARE_URL);
+      qr.make();
+      return qr.createSvgTag({ cellSize: 4, margin: 8, scalable: true });
+    } catch (e) {
+      return "";
+    }
+  })();
+
+  /* ============ State ============ */
+  // Use the LAST #state-data tag in the document (defensive: guards against
+  // a stray duplicate a lenient parser may have left earlier in the page).
+  var stateDataEls = document.querySelectorAll("#state-data");
+  var stateDataEl = stateDataEls[stateDataEls.length - 1];
+  var state;
+  try {
+    state = JSON.parse(stateDataEl.textContent);
+  } catch (e) {
+    state = { tables: [], history: [] };
+  }
+  if (!state || typeof state !== "object") state = { tables: [], history: [] };
+  state = migrate(state);
+
+  function migrate(s) {
+    if (!Array.isArray(s.tables)) s.tables = [];
+    if (!Array.isArray(s.history)) s.history = [];
+    if (!Array.isArray(s.bracketHistory)) s.bracketHistory = [];
+    if (typeof s.bracket === "undefined") s.bracket = null;
+    if (s.tournament) {
+      var legacy = s.tournament;
+      var legCount = legacy.bestOf || 3;
+      var legs = [];
+      for (var i = 0; i < legCount; i++) legs.push({ type: "01", target: 501 });
+      s.tables.unshift({
+        id: legacy.id || uid("t"),
+        name: legacy.name || "ロビンA",
+        format: "singles",
+        boardCount: legacy.boardCount || 1,
+        legs: legs,
+        entrants: (legacy.players || []).map(function (p) { return { id: p.id, name: p.name, members: [p.name] }; }),
+        matches: legacy.matches || [],
+        createdAt: legacy.createdAt || nowIso()
+      });
+      delete s.tournament;
+    }
+    s.tables.forEach(ensureHandicap);
+    return s;
+  }
+
+  function defaultHandicapArr() { return [null, null, null, null, null, null, null]; }
+
+  function ensureHandicap(t) {
+    if (!t.handicap || typeof t.handicap !== "object") {
+      t.handicap = { "01": defaultHandicapArr(), cricket: defaultHandicapArr() };
+      return;
+    }
+    if (!Array.isArray(t.handicap["01"])) t.handicap["01"] = defaultHandicapArr();
+    if (!Array.isArray(t.handicap.cricket)) t.handicap.cricket = defaultHandicapArr();
+  }
+
+  // ============ Firebase (shared live state) ============
+  // Fill in with your own Firebase project's web-app config (Firebase
+  // console -> Project settings -> General -> "Your apps" -> SDK setup
+  // and configuration). These values are meant to be public / client
+  // side -- they are not secrets. Firestore's own Security Rules (set
+  // separately, in the Firebase console) are what actually control who
+  // may read/write.
+  var firebaseConfig = {
+    apiKey: "AIzaSyBvI5oOGh54YuVImw0L-V3MbfbNAvtb7Jo",
+    authDomain: "house-tournament-2026.firebaseapp.com",
+    projectId: "house-tournament-2026",
+    storageBucket: "house-tournament-2026.firebasestorage.app",
+    messagingSenderId: "291175029591",
+    appId: "1:291175029591:web:1bd42bcf33a42fb8dcbc12",
+    measurementId: "G-TR1Y5MXRF5"
+  };
+  var db = null;
+  var stateDocRef = null;
+  var dbReady = false;
+  try {
+    if (firebaseConfig.apiKey !== "REPLACE_ME" && window.firebase) {
+      firebase.initializeApp(firebaseConfig);
+      db = firebase.firestore();
+      stateDocRef = db.collection("darts").doc("tournament");
+      dbReady = true;
+    }
+  } catch (e) {
+    console.error("Firebase init failed", e);
+  }
+
+  var canWrite = true;      // optimistic until a write proves otherwise
+  var writeChecked = false;
+  var EDIT_PASSWORD = "1234";
+  var UNLOCK_KEY = "dartsnight_unlocked";
+  var unlocked = false;     // has this device ever entered the correct password?
+  try {
+    unlocked = localStorage.getItem(UNLOCK_KEY) === "1";
+  } catch (e) {}
+  var viewMode = "view";    // "auto" | "view" (local convenience toggle); default to
+                            // view until this device is unlocked with the password
+  try {
+    var storedMode = localStorage.getItem("dartsnight_viewmode");
+    if (unlocked && storedMode === "auto") viewMode = "auto";
+  } catch (e) {}
+
+  function uid(prefix) {
+    return prefix + "_" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
+  }
+
+  function nowIso() { return new Date().toISOString(); }
+
+  /* ============ Round robin schedule ============ */
+  function generateSchedule(entrants, boardCount) {
+    // 5-entrant tables follow a fixed standard match order that matches
+    // printed dart group sheets (1-2, 3-4, 1-5, 2-3, 4-5, 1-3, 2-4, 3-5,
+    // 1-4, 2-5 by entry position). This exact order isn't produced by the
+    // general circle-method loop below, so it's special-cased here.
+    if (entrants.length === 5) {
+      var FIVE_ORDER = [[0, 1], [2, 3], [0, 4], [1, 2], [3, 4], [0, 2], [1, 3], [2, 4], [0, 3], [1, 4]];
+      var fiveMatches = [];
+      FIVE_ORDER.forEach(function (pair, idx) {
+        var pa = entrants[pair[0]], pb = entrants[pair[1]];
+        fiveMatches.push({
+          id: uid("m"),
+          round: idx,
+          order: idx,
+          board: (idx % boardCount) + 1,
+          playerAId: pa.id,
+          playerAName: pa.name,
+          playerBId: pb.id,
+          playerBName: pb.name,
+          status: "pending",
+          scoreA: 0,
+          scoreB: 0,
+          winnerId: null
+        });
+      });
+      return fiveMatches;
+    }
+    // 6-entrant tables use the "cross robin" format common on printed dart
+    // group sheets: instead of the full round robin (5 rounds / 15 matches),
+    // the round that pairs each entrant with their round-robin "opposite"
+    // (position i vs position n-1-i in the initial order) is skipped,
+    // leaving 4 rounds / 12 matches. With the fixed-position circle method
+    // below, that opposite-pairing round is always the very first one
+    // (r === 0, before any rotation), so it's simply omitted.
+    var skipOpposite = entrants.length === 6;
+    var list = entrants.slice();
+    if (list.length % 2 !== 0) list.push({ id: "__bye__", name: "BYE" });
+    var n = list.length;
+    var half = n / 2;
+    var arr = list.slice();
+    var matches = [];
+    var order = 0;
+    var roundNum = 0;
+    for (var r = 0; r < n - 1; r++) {
+      var roundMatches = [];
+      for (var i = 0; i < half; i++) {
+        var a = arr[i], b = arr[n - 1 - i];
+        if (a.id !== "__bye__" && b.id !== "__bye__") roundMatches.push([a, b]);
+      }
+      if (!(skipOpposite && r === 0)) {
+        roundNum++;
+        for (var m = 0; m < roundMatches.length; m++) {
+          var pair = roundMatches[m];
+          matches.push({
+            id: uid("m"),
+            round: roundNum,
+            order: order++,
+            board: (m % boardCount) + 1,
+            playerAId: pair[0].id,
+            playerAName: pair[0].name,
+            playerBId: pair[1].id,
+            playerBName: pair[1].name,
+            status: "pending",
+            scoreA: 0,
+            scoreB: 0,
+            winnerId: null
+          });
+        }
+      }
+      var fixed = arr[0];
+      var rest = arr.slice(1);
+      rest.unshift(rest.pop());
+      arr = [fixed].concat(rest);
+    }
+    return matches;
+  }
+
+  /* ============ Tournament bracket engine ============ */
+  function nextPow2(n) {
+    var p = 1;
+    while (p < n) p *= 2;
+    return p;
+  }
+
+  // Standard single-elimination seeding order: for a bracket of size n
+  // (a power of 2), returns the seed numbers in bracket-slot order so that
+  // seed 1 and seed 2 can only meet in the final, seeds 1-4 can only meet
+  // from the semifinal on, etc. (e.g. n=8 -> [1,8,4,5,2,7,3,6]).
+  function seedOrder(n) {
+    var seeds = [1, 2];
+    while (seeds.length < n) {
+      var size = seeds.length * 2;
+      var next = [];
+      seeds.forEach(function (s) {
+        next.push(s);
+        next.push(size + 1 - s);
+      });
+      seeds = next;
+    }
+    return seeds;
+  }
+
+  function roundLabel(totalRounds, r) {
+    var fromEnd = totalRounds - 1 - r;
+    if (fromEnd === 0) return "決勝";
+    if (fromEnd === 1) return "準決勝";
+    if (fromEnd === 2) return "準々決勝";
+    return (r + 1) + "回戦";
+  }
+
+  function buildBracketSeeds(entries, advanceCount) {
+    // entries: finished ロビン (state.history) entries to draw from.
+    // Seeds are ordered rank-tier by rank-tier (all group winners first,
+    // then all runners-up, ...) so the standard seedOrder() bracket keeps
+    // same-group entrants apart for as long as possible.
+    // id is deterministic (tableId + rank) rather than uid()-random so that
+    // manual-placement UI can recompute this list on every render (to stay
+    // live as ロビン results change) without losing in-progress position
+    // assignments keyed by this id.
+    var seeds = [];
+    for (var rank = 0; rank < advanceCount; rank++) {
+      entries.forEach(function (t) {
+        var fs = t.finalStandings || [];
+        if (fs[rank]) {
+          seeds.push({
+            id: t.id + "_r" + rank,
+            name: fs[rank].name,
+            rating: fs[rank].rating != null ? fs[rank].rating : null,
+            source: { tableName: t.name, rank: rank + 1 }
+          });
+        }
+      });
+    }
+    return seeds;
+  }
+
+  function emptyBracketMatch(round, index) {
+    return {
+      id: uid("tm"),
+      round: round,
+      index: index,
+      playerAId: null, playerAName: null, playerARating: null, playerASource: null,
+      playerBId: null, playerBName: null, playerBRating: null, playerBSource: null,
+      status: "pending",
+      scoreA: 0,
+      scoreB: 0,
+      winnerId: null,
+      winnerName: null,
+      bye: false
+    };
+  }
+
+  function buildBracketRoundsFromSlots(slots) {
+    // slots: array (length = a power of 2) of seed objects (or null for a
+    // bye) already arranged in final bracket-position order.
+    var size = slots.length;
+    var totalRounds = Math.log2(size);
+    var rounds = [];
+    var round0 = [];
+    for (var i = 0; i < size; i += 2) {
+      var a = slots[i], b = slots[i + 1];
+      var m = emptyBracketMatch(0, round0.length);
+      m.playerAId = a ? a.id : null;
+      m.playerAName = a ? a.name : null;
+      m.playerARating = a ? a.rating : null;
+      m.playerASource = a ? a.source : null;
+      m.playerBId = b ? b.id : null;
+      m.playerBName = b ? b.name : null;
+      m.playerBRating = b ? b.rating : null;
+      m.playerBSource = b ? b.source : null;
+      m.bye = !a || !b;
+      round0.push(m);
+    }
+    rounds.push(round0);
+    for (var r = 1; r < totalRounds; r++) {
+      var count = size / Math.pow(2, r + 1);
+      var round = [];
+      for (var j = 0; j < count; j++) round.push(emptyBracketMatch(r, j));
+      rounds.push(round);
+    }
+    // Resolve any round-0 byes immediately (cascades forward on its own).
+    rounds[0].forEach(function (m) { resolveIfBye(rounds, m); });
+    return rounds;
+  }
+
+  function slotsFromSeedOrder(seeds) {
+    // Standard tournament seeding: seed 1 and seed 2 land at opposite ends
+    // of the bracket and can only meet in the final, seed 3/4 next, etc.
+    var total = seeds.length;
+    var size = nextPow2(total);
+    var order = seedOrder(size);
+    var slots = new Array(size);
+    for (var i = 0; i < size; i++) {
+      var seedNum = order[i];
+      slots[i] = seedNum <= total ? seeds[seedNum - 1] : null;
+    }
+    return slots;
+  }
+
+  function buildBracketRounds(seeds) {
+    return buildBracketRoundsFromSlots(slotsFromSeedOrder(seeds));
+  }
+
+  function buildManualSlots(seeds, positions, size) {
+    // positions: { [seed.id]: 1-based slot number }. Any seed left
+    // unassigned (or assigned out of range) is simply omitted (leaves that
+    // slot a bye) — callers validate completeness before using this.
+    var slots = new Array(size).fill(null);
+    seeds.forEach(function (s) {
+      var pos = positions[s.id];
+      if (pos >= 1 && pos <= size && !slots[pos - 1]) slots[pos - 1] = s;
+    });
+    return slots;
+  }
+
+  function resolveIfBye(rounds, m) {
+    if (m.status === "done") return;
+    var hasA = !!m.playerAId, hasB = !!m.playerBId;
+    if (m.bye && hasA && !hasB) finishBracketMatch(rounds, m, "A");
+    else if (m.bye && hasB && !hasA) finishBracketMatch(rounds, m, "B");
+  }
+
+  function finishBracketMatch(rounds, m, winnerSide) {
+    m.status = "done";
+    var wId = winnerSide === "A" ? m.playerAId : m.playerBId;
+    var wName = winnerSide === "A" ? m.playerAName : m.playerBName;
+    var wRating = winnerSide === "A" ? m.playerARating : m.playerBRating;
+    var wSource = winnerSide === "A" ? m.playerASource : m.playerBSource;
+    m.winnerId = wId;
+    m.winnerName = wName;
+    var nextRound = rounds[m.round + 1];
+    if (!nextRound) return;
+    var next = nextRound[Math.floor(m.index / 2)];
+    if (!next) return;
+    if (m.index % 2 === 0) {
+      next.playerAId = wId; next.playerAName = wName; next.playerARating = wRating; next.playerASource = wSource;
+    } else {
+      next.playerBId = wId; next.playerBName = wName; next.playerBRating = wRating; next.playerBSource = wSource;
+    }
+    resolveIfBye(rounds, next);
+  }
+
+  function resetBracketFrom(rounds, roundIdx, matchIdx) {
+    // Clears one match's result and cascades the reset forward: whatever
+    // later match this one fed into loses that player slot, and if that
+    // later match had itself already been decided, its own result and
+    // downstream propagation are cleared too, recursively to the final.
+    var m = rounds[roundIdx][matchIdx];
+    m.status = "pending";
+    m.scoreA = 0; m.scoreB = 0; m.winnerId = null; m.winnerName = null;
+    var nextRound = rounds[roundIdx + 1];
+    if (!nextRound) return;
+    var next = nextRound[Math.floor(matchIdx / 2)];
+    if (!next) return;
+    var hadResult = next.status === "done";
+    if (matchIdx % 2 === 0) {
+      next.playerAId = null; next.playerAName = null; next.playerARating = null; next.playerASource = null;
+    } else {
+      next.playerBId = null; next.playerBName = null; next.playerBRating = null; next.playerBSource = null;
+    }
+    if (hadResult) resetBracketFrom(rounds, roundIdx + 1, Math.floor(matchIdx / 2));
+  }
+
+  function findBracketMatchLocation(rounds, id) {
+    for (var r = 0; r < rounds.length; r++) {
+      for (var i = 0; i < rounds[r].length; i++) {
+        if (rounds[r][i].id === id) return { round: r, index: i };
+      }
+    }
+    return null;
+  }
+
+  /* ============ Rating (Rt.) helper ============ */
+  function ratingBadgeHtml(rating) {
+    return rating != null ? ' <span class="rt-badge">Rt.' + esc(rating) + "</span>" : "";
+  }
+
+  function resultMarkHtml(isWin) {
+    return isWin
+      ? '<span class="result-mark mark-win" aria-label="勝ち">○</span>'
+      : '<span class="result-mark mark-lose" aria-label="負け">✕</span>';
+  }
+
+  /* ============ Standings ============ */
+  function computeStandings(entrants, matches) {
+    var byId = {};
+    entrants.forEach(function (p) {
+      byId[p.id] = { id: p.id, name: p.name, rating: p.rating != null ? p.rating : null, played: 0, wins: 0, losses: 0, legsFor: 0, legsAgainst: 0 };
+    });
+    matches.forEach(function (m) {
+      if (m.status !== "done") return;
+      var a = byId[m.playerAId], b = byId[m.playerBId];
+      if (!a || !b) return;
+      a.played++; b.played++;
+      a.legsFor += m.scoreA; a.legsAgainst += m.scoreB;
+      b.legsFor += m.scoreB; b.legsAgainst += m.scoreA;
+      if (m.scoreA > m.scoreB) { a.wins++; b.losses++; }
+      else if (m.scoreB > m.scoreA) { b.wins++; a.losses++; }
+    });
+    var rows = Object.keys(byId).map(function (k) { return byId[k]; });
+    rows.sort(function (x, y) {
+      if (y.wins !== x.wins) return y.wins - x.wins;
+      var dx = x.legsFor - x.legsAgainst, dy = y.legsFor - y.legsAgainst;
+      if (dy !== dx) return dy - dx;
+      if (y.legsFor !== x.legsFor) return y.legsFor - x.legsFor;
+      return x.name.localeCompare(y.name, "ja");
+    });
+    return rows;
+  }
+
+  function computeLifetime(history) {
+    var byName = {};
+    history.forEach(function (t) {
+      (t.finalStandings || []).forEach(function (s) {
+        if (!byName[s.name]) byName[s.name] = { name: s.name, events: 0, wins: 0, losses: 0 };
+        byName[s.name].events++;
+        byName[s.name].wins += s.wins;
+        byName[s.name].losses += s.losses;
+      });
+    });
+    var rows = Object.keys(byName).map(function (k) { return byName[k]; });
+    rows.sort(function (x, y) { return y.wins - x.wins || x.name.localeCompare(y.name, "ja"); });
+    return rows;
+  }
+
+  /* ============ Leg helpers ============ */
+  function legLabel(leg) {
+    return leg.type === "cricket" ? "クリケット" : String(leg.target);
+  }
+  function legSummary(legs) {
+    return legs.map(function (leg, i) { return (i + 1) + "Leg " + legLabel(leg); }).join(" ・ ");
+  }
+  function legOptionsHtml(index, selected) {
+    var html = "";
+    LEG_TARGETS.forEach(function (t) {
+      var val = "01-" + t;
+      html += '<option value="' + val + '"' + (selected.type === "01" && selected.target === t ? " selected" : "") + ">" + t + "(01)</option>";
+    });
+    if (index > 0) {
+      html += '<option value="cricket"' + (selected.type === "cricket" ? " selected" : "") + ">クリケット</option>";
+    }
+    return html;
+  }
+  function parseLegValue(v) {
+    if (v === "cricket") return { type: "cricket" };
+    var target = parseInt(v.split("-")[1], 10);
+    return { type: "01", target: target };
+  }
+  function defaultLegs(count) {
+    var legs = [];
+    for (var i = 0; i < count; i++) legs.push({ type: "01", target: 501 });
+    return legs;
+  }
+
+  /* ============ Escaping ============ */
+  function esc(s) {
+    return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
+
+  /* ============ Ephemeral UI state (not persisted to the artifact, but
+     mirrored to sessionStorage — see saveUiSnapshot/loadUiSnapshot below).
+     Mobile browsers frequently reload a backgrounded tab (e.g. when the
+     on-screen keyboard opens), which wipes plain JS variables; without this
+     mirror that reload silently dumps the user back to the table list mid
+     form-fill, which looks like "the screen goes back" while typing. ============ */
+  var UI_STORAGE_KEY = "dartsnight_ui_v1";
+  var ui = {
+    topTab: "tables",       // "tables" | "history"
+    activeTableId: null,
+    tab: "matches",         // sub-tab within a table: "matches" | "standings"
+    openMatchId: null,
+    draftScores: {},        // matchId -> {a, b}
+    draftBoard: {},         // matchId -> board number
+    showPasswordPrompt: false,
+    passwordError: false,
+    showNewTableForm: false,
+    newTable: { format: "singles", name: "", entrants: [], entrantDraft: [], ratingDraft: "", legCount: 3, legs: defaultLegs(3), boards: 1 },
+    editingLegsTableId: null,
+    editLegs: null,         // draft legs array while editing an existing table's leg config
+    pendingConfirm: null,   // null | {type:"finish"|"cancel", tableId} | {type:"finish-tournament"|"cancel-tournament"}
+    confirmDeleteId: null,
+    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} }
+  };
+
+  function saveUiSnapshot() {
+    try {
+      sessionStorage.setItem(UI_STORAGE_KEY, JSON.stringify({
+        topTab: ui.topTab,
+        activeTableId: ui.activeTableId,
+        tab: ui.tab,
+        showNewTableForm: ui.showNewTableForm,
+        newTable: ui.newTable,
+        editingLegsTableId: ui.editingLegsTableId,
+        editLegs: ui.editLegs,
+        tournamentSetup: ui.tournamentSetup,
+        // The open match editor (対戦結果の入力) is exactly the screen a user
+        // is mid-tap on when a silent reload hits — losing it not only drops
+        // the score they were entering but also swaps in the finish/cancel
+        // buttons in that same screen spot, risking an accidental tap on a
+        // destructive action. Persist it too.
+        openMatchId: ui.openMatchId,
+        openMatchDraft: ui.openMatchId ? {
+          score: ui.draftScores[ui.openMatchId] || null,
+          board: ui.draftBoard[ui.openMatchId] != null ? ui.draftBoard[ui.openMatchId] : null
+        } : null
+      }));
+    } catch (e) {}
+  }
+
+  function loadUiSnapshot() {
+    try {
+      var raw = sessionStorage.getItem(UI_STORAGE_KEY);
+      if (!raw) return;
+      var saved = JSON.parse(raw);
+      if (!saved || typeof saved !== "object") return;
+      if (saved.topTab === "tables" || saved.topTab === "history" || saved.topTab === "tournament") ui.topTab = saved.topTab;
+      if (typeof saved.activeTableId === "string" || saved.activeTableId === null) ui.activeTableId = saved.activeTableId;
+      if (saved.tab === "matches" || saved.tab === "standings") ui.tab = saved.tab;
+      if (typeof saved.showNewTableForm === "boolean") ui.showNewTableForm = saved.showNewTableForm;
+      if (saved.newTable && typeof saved.newTable === "object") {
+        ui.newTable = {
+          format: saved.newTable.format || "singles",
+          name: saved.newTable.name || "",
+          entrants: Array.isArray(saved.newTable.entrants) ? saved.newTable.entrants : [],
+          entrantDraft: Array.isArray(saved.newTable.entrantDraft) ? saved.newTable.entrantDraft : [],
+          ratingDraft: typeof saved.newTable.ratingDraft === "string" ? saved.newTable.ratingDraft : "",
+          legCount: saved.newTable.legCount || 3,
+          legs: Array.isArray(saved.newTable.legs) ? saved.newTable.legs : defaultLegs(3),
+          boards: saved.newTable.boards || 1
+        };
+      }
+      if (typeof saved.editingLegsTableId === "string" || saved.editingLegsTableId === null) ui.editingLegsTableId = saved.editingLegsTableId;
+      if (Array.isArray(saved.editLegs)) ui.editLegs = saved.editLegs;
+      if (saved.tournamentSetup && typeof saved.tournamentSetup === "object") {
+        ui.tournamentSetup = {
+          advanceCount: typeof saved.tournamentSetup.advanceCount === "number" ? saved.tournamentSetup.advanceCount : 2,
+          selectedIds: Array.isArray(saved.tournamentSetup.selectedIds) ? saved.tournamentSetup.selectedIds : [],
+          mode: saved.tournamentSetup.mode === "manual" ? "manual" : "auto",
+          manualPositions: saved.tournamentSetup.manualPositions && typeof saved.tournamentSetup.manualPositions === "object" ? saved.tournamentSetup.manualPositions : {}
+        };
+      }
+      if (typeof saved.openMatchId === "string") {
+        ui.openMatchId = saved.openMatchId;
+        var d = saved.openMatchDraft;
+        if (d && typeof d === "object") {
+          if (d.score && typeof d.score === "object") {
+            ui.draftScores[ui.openMatchId] = { a: d.score.a || 0, b: d.score.b || 0 };
+          }
+          if (typeof d.board === "number") ui.draftBoard[ui.openMatchId] = d.board;
+        }
+      }
+    } catch (e) {}
+  }
+  loadUiSnapshot();
+
+  /* ============ Toasts ============ */
+  function toast(msg) {
+    var wrap = document.getElementById("toast-wrap");
+    var el = document.createElement("div");
+    el.className = "toast";
+    el.textContent = msg;
+    wrap.appendChild(el);
+    setTimeout(function () {
+      el.style.transition = "opacity 0.4s ease";
+      el.style.opacity = "0";
+      setTimeout(function () { el.remove(); }, 420);
+    }, 3200);
+  }
+
+  /* ============ Rendering: shared bits ============ */
+  function boardStrip(t) {
+    if (t.boardCount <= 1) return "";
+    var chips = [];
+    for (var b = 1; b <= t.boardCount; b++) {
+      var busy = t.matches.find(function (m) { return m.status === "in_progress" && m.board === b; });
+      if (busy) {
+        chips.push('<div class="board-chip busy"><span class="label">ボード ' + b + '</span>' + esc(busy.playerAName) + " vs " + esc(busy.playerBName) + "</div>");
+      } else {
+        chips.push('<div class="board-chip free"><span class="label">ボード ' + b + "</span>空き</div>");
+      }
+    }
+    return '<div class="board-strip">' + chips.join("") + "</div>";
+  }
+
+  function legPanel(t, editable) {
+    var editing = ui.editingLegsTableId === t.id;
+    var html = '<div class="leg-panel">';
+    if (!editing) {
+      html += '<div class="leg-summary"><div class="leg-summary-text">🎯 レグ構成: <b>' + esc(legSummary(t.legs)) + '</b></div>';
+      if (editable) html += '<button class="btn btn-ghost btn-sm" data-action="edit-legs" data-id="' + t.id + '">編集</button>';
+      html += "</div>";
+    } else {
+      var legs = ui.editLegs || t.legs;
+      html += '<div class="field" style="margin-bottom:10px;"><label>レグ数</label><div class="stepper"><button data-action="editlegs-count-dec">−</button><output class="mono">' + legs.length + '</output><button data-action="editlegs-count-inc">+</button></div></div>';
+      html += '<div class="leg-edit-grid">';
+      legs.forEach(function (leg, i) {
+        html += '<div class="leg-row"><span class="leg-num">' + (i + 1) + "Leg目</span><select data-action=\"set-leg-type\" data-leg=\"" + i + '">' + legOptionsHtml(i, leg) + "</select></div>";
+      });
+      html += "</div>";
+      html += '<div class="match-actions" style="margin-top:12px;"><button class="btn btn-primary btn-sm" data-action="save-legs" data-id="' + t.id + '">保存</button><button class="btn btn-ghost btn-sm" data-action="cancel-edit-legs">キャンセル</button></div>';
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function handicapCellHtml(t, mode, idx, val, editable) {
+    var label = (idx + 1) + "差";
+    if (editable) {
+      return '<div class="handicap-cell"><span class="handicap-cell-label">' + label + '</span><input type="number" inputmode="numeric" class="handicap-input" data-action="set-handicap" data-mode="' + mode + '" data-idx="' + idx + '" value="' + (val != null ? esc(val) : "") + '"></div>';
+    }
+    return '<div class="handicap-cell"><span class="handicap-cell-label">' + label + '</span><span class="handicap-value mono">' + (val != null ? esc(val) : "-") + "</span></div>";
+  }
+
+  function handicapPanel(t, editable) {
+    var hc = t.handicap || { "01": defaultHandicapArr(), cricket: defaultHandicapArr() };
+    var html = '<div class="handicap-panel">';
+    html += '<div class="handicap-group"><div class="handicap-group-label">ハンデ 01</div><div class="handicap-row">';
+    for (var i = 0; i < 7; i++) html += handicapCellHtml(t, "01", i, hc["01"][i], editable);
+    html += "</div></div>";
+    html += '<div class="handicap-group"><div class="handicap-group-label">ハンデ クリケット</div><div class="handicap-row">';
+    for (var j = 0; j < 7; j++) html += handicapCellHtml(t, "cricket", j, hc.cricket[j], editable);
+    html += "</div></div>";
+    html += "</div>";
+    return html;
+  }
+
+  function statusLabel(s) {
+    return s === "pending" ? "待機中" : s === "in_progress" ? "進行中" : "終了";
+  }
+
+  function matchCard(t, m, editable) {
+    var aWin = m.status === "done" && m.scoreA > m.scoreB;
+    var bWin = m.status === "done" && m.scoreB > m.scoreA;
+    var open = ui.openMatchId === m.id;
+    var html = '<div class="match-card" data-match="' + m.id + '">';
+    html += '<div class="match-top">';
+    html += '<div class="match-players">';
+    html += (m.status === "done" ? resultMarkHtml(aWin) : "") + '<span class="player-name' + (aWin ? " winner" : "") + '">' + esc(m.playerAName) + "</span>";
+    html += '<span class="vs-dot" aria-hidden="true"></span>';
+    html += (m.status === "done" ? resultMarkHtml(bWin) : "") + '<span class="player-name' + (bWin ? " winner" : "") + '">' + esc(m.playerBName) + "</span>";
+    html += "</div>";
+    html += '<div class="match-meta">';
+    if (t.boardCount > 1 && m.board) html += '<span class="muted mono">B' + m.board + "</span>";
+    html += '<span class="status-pill ' + m.status + '">' + statusLabel(m.status) + "</span>";
+    html += "</div></div>";
+    if (m.status === "done") {
+      html += '<div class="match-score mono">' + m.scoreA + " – " + m.scoreB + (editable ? ' &nbsp;·&nbsp; <button class="btn btn-ghost btn-sm" data-action="reopen-match" data-id="' + m.id + '">編集</button>' : "") + "</div>";
+    } else if (editable) {
+      if (!open) {
+        var label = m.status === "pending" ? "対戦を開始" : "結果を入力";
+        html += '<div class="match-actions"><button class="btn btn-ghost btn-sm" data-action="open-match" data-id="' + m.id + '">' + label + "</button></div>";
+      } else {
+        var ds = ui.draftScores[m.id] || { a: m.scoreA || 0, b: m.scoreB || 0 };
+        var db = ui.draftBoard[m.id] || m.board || 1;
+        html += '<div class="match-body">';
+        if (m.status === "pending" && t.boardCount > 1) {
+          html += '<div class="field" style="margin-bottom:10px;"><label for="board-' + m.id + '">使用ボード</label><select class="board-select" id="board-' + m.id + '" data-action="draft-board" data-id="' + m.id + '">';
+          for (var b = 1; b <= t.boardCount; b++) {
+            html += '<option value="' + b + '"' + (b === db ? " selected" : "") + ">ボード " + b + "</option>";
+          }
+          html += "</select></div>";
+        }
+        if (m.status === "pending") {
+          html += '<div class="match-actions"><button class="btn btn-primary btn-sm" data-action="start-match" data-id="' + m.id + '">結果を入力する</button> <button class="btn btn-ghost btn-sm" data-action="close-match">キャンセル</button></div>';
+        } else {
+          html += '<div class="match-controls">';
+          html += '<div class="score-row"><span class="name">' + esc(m.playerAName) + '</span><div class="stepper"><button data-action="score-dec" data-id="' + m.id + '" data-side="a" aria-label="減らす">−</button><output class="mono">' + ds.a + '</output><button data-action="score-inc" data-id="' + m.id + '" data-side="a" aria-label="増やす">+</button></div></div>';
+          html += '<div class="score-row"><span class="name">' + esc(m.playerBName) + '</span><div class="stepper"><button data-action="score-dec" data-id="' + m.id + '" data-side="b" aria-label="減らす">−</button><output class="mono">' + ds.b + '</output><button data-action="score-inc" data-id="' + m.id + '" data-side="b" aria-label="増やす">+</button></div></div>';
+          html += "</div>";
+          html += '<div class="match-actions"><button class="btn btn-primary btn-sm" data-action="confirm-match" data-id="' + m.id + '"' + (ds.a === ds.b ? " disabled" : "") + '>結果を確定</button> <button class="btn btn-ghost btn-sm" data-action="revert-match" data-id="' + m.id + '">待機に戻す</button> <button class="btn btn-ghost btn-sm" data-action="close-match">閉じる</button></div>';
+        }
+        html += "</div>";
+      }
+    } else {
+      html += '<div class="match-score muted">' + statusLabel(m.status) + "</div>";
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function crossTable(t, editable) {
+    var entrants = t.entrants;
+    var n = entrants.length;
+    if (n < 2) return "";
+    var idIndex = {};
+    entrants.forEach(function (p, i) { idIndex[p.id] = i; });
+    var pairMatch = {};
+    t.matches.forEach(function (m) {
+      var ia = idIndex[m.playerAId], ib = idIndex[m.playerBId];
+      if (ia == null || ib == null) return;
+      var key = ia < ib ? ia + "-" + ib : ib + "-" + ia;
+      pairMatch[key] = m;
+    });
+    var standingsRows = computeStandings(entrants, t.matches);
+    var standById = {};
+    standingsRows.forEach(function (r, i) { standById[r.id] = { rank: i + 1, row: r }; });
+
+    var html = '<div class="ct-wrap">';
+    html += '<div class="ct-header"><div class="ct-header-bar" aria-hidden="true"></div><h3 class="ct-title">' + esc(t.name) + "</h3></div>";
+    html += '<div class="table-scroll"><table class="ct-table"><thead><tr><th class="ct-corner"></th>';
+    for (var c = 0; c < n; c++) html += '<th class="ct-colnum mono">' + (c + 1) + "</th>";
+    html += '<th class="ct-stat-h">勝ち数</th><th class="ct-stat-h">勝ちLEG数</th><th class="ct-stat-h">負けLEG数</th><th class="ct-stat-h">得失LEG数</th><th class="ct-stat-h">順位</th></tr></thead><tbody>';
+
+    for (var r = 0; r < n; r++) {
+      var pr = entrants[r];
+      html += '<tr><th class="ct-rowlabel"><span class="ct-rownum mono">' + (r + 1) + '</span><span class="ct-rowname">' + esc(pr.name) + "</span>" + ratingBadgeHtml(pr.rating) + "</th>";
+      for (var c2 = 0; c2 < n; c2++) {
+        if (r === c2) { html += '<td class="ct-cell diag"></td>'; continue; }
+        var pairKey = r < c2 ? r + "-" + c2 : c2 + "-" + r;
+        var m = pairMatch[pairKey];
+        if (!m) { html += '<td class="ct-cell hatched"' + (r > c2 ? ' aria-hidden="true"' : "") + '></td>'; continue; }
+        var isDone = m.status === "done";
+        var scoreRow, scoreCol;
+        if (idIndex[m.playerAId] === r) { scoreRow = m.scoreA; scoreCol = m.scoreB; }
+        else { scoreRow = m.scoreB; scoreCol = m.scoreA; }
+        var text = isDone ? (scoreRow + " - " + scoreCol) : "　-　";
+        var mark = isDone ? resultMarkHtml(scoreRow > scoreCol) : "";
+        var cls = "ct-cell fillable" + (isDone ? " done" : m.status === "in_progress" ? " live" : "") + (r > c2 ? " ct-mirror" : "");
+        if (editable) {
+          var act = isDone ? "reopen-match" : "open-match";
+          html += '<td class="' + cls + '"><button class="ct-cell-btn mono" data-action="' + act + '" data-id="' + m.id + '">' + mark + "(" + text + ")</button></td>";
+        } else {
+          html += '<td class="' + cls + '"><span class="mono">' + mark + "(" + text + ")</span></td>";
+        }
+      }
+      var st = standById[pr.id];
+      var legsFor = st ? st.row.legsFor : 0;
+      var legsAgainst = st ? st.row.legsAgainst : 0;
+      var diff = legsFor - legsAgainst;
+      html += '<td class="ct-stat mono">' + (st ? st.row.wins : 0) + '</td><td class="ct-stat mono">' + legsFor + '</td><td class="ct-stat mono">' + legsAgainst + '</td><td class="ct-stat mono">' + (diff > 0 ? "+" : "") + diff + '</td><td class="ct-stat mono ct-rank">' + (st ? st.rank : "") + "</td>";
+      html += "</tr>";
+    }
+    html += "</tbody></table></div>";
+
+    var ordered = t.matches.slice().sort(function (a, b) { return a.order - b.order; });
+    html += '<div class="ct-legend"><span class="ct-legend-tag">試合順</span><div class="ct-legend-list">';
+    html += ordered.map(function (m, i) {
+      var ia = idIndex[m.playerAId], ib = idIndex[m.playerBId];
+      return '<span class="ct-legend-item">第' + (i + 1) + "試合：<b>" + (ia + 1) + "-" + (ib + 1) + "</b></span>";
+    }).join("");
+    html += "</div></div>";
+
+    html += "</div>";
+    return html;
+  }
+
+  function renderMatchesTab(t, editable) {
+    var html = boardStrip(t);
+    html += crossTable(t, editable);
+    var openMatch = ui.openMatchId ? t.matches.find(function (m) { return m.id === ui.openMatchId; }) : null;
+    if (openMatch) {
+      html += '<div class="card ct-editor"><h3 style="margin-top:0;font-size:15px;">対戦結果の入力</h3>' + matchCard(t, openMatch, editable) + "</div>";
+    }
+    return html;
+  }
+
+  function renderStandingsTab(t) {
+    var rows = computeStandings(t.entrants, t.matches);
+    var html = '<div class="table-scroll"><table class="standings-table"><thead><tr>';
+    html += "<th>#</th><th>エントリー</th><th class=\"num\">試合</th><th class=\"num\">勝</th><th class=\"num\">敗</th><th class=\"num\">獲得</th><th class=\"num\">失点</th><th class=\"num\">差</th></tr></thead><tbody>";
+    rows.forEach(function (r, i) {
+      var rc = i === 0 ? " r1" : i === 1 ? " r2" : i === 2 ? " r3" : "";
+      var diff = r.legsFor - r.legsAgainst;
+      html += "<tr><td><span class=\"rank-badge" + rc + "\">" + (i + 1) + "</span></td><td>" + esc(r.name) + ratingBadgeHtml(r.rating) + '</td><td class="num tabular">' + r.played + '</td><td class="num tabular">' + r.wins + '</td><td class="num tabular">' + r.losses + '</td><td class="num tabular">' + r.legsFor + '</td><td class="num tabular">' + r.legsAgainst + '</td><td class="num tabular">' + (diff > 0 ? "+" : "") + diff + "</td></tr>";
+    });
+    html += "</tbody></table></div>";
+    return html;
+  }
+
+  function renderHistoryTab(editable) {
+    var html = "";
+    if (state.history.length === 0) {
+      html += '<div class="empty-state"><div class="icon">🎯</div><p>まだ終了したロビン表はありません</p></div>';
+    } else {
+      state.history.forEach(function (t) {
+        var champ = (t.finalStandings && t.finalStandings[0]) ? t.finalStandings[0].name : "-";
+        var d = new Date(t.finishedAt);
+        var dateStr = isNaN(d.getTime()) ? "" : (d.getMonth() + 1) + "/" + d.getDate();
+        html += '<details class="history-item"><summary><div><h3>' + esc(t.name) + '</h3><div class="h-date mono">' + dateStr + " ・ <span class=\"format-badge\">" + esc(FORMAT_LABEL[t.format] || "シングルス") + "</span></div></div><div class=\"h-winner\">🏆 " + esc(champ) + "</div></summary>";
+        html += '<div class="history-standings"><div class="table-scroll"><table class="standings-table"><thead><tr><th>#</th><th>エントリー</th><th class="num">勝</th><th class="num">敗</th></tr></thead><tbody>';
+        (t.finalStandings || []).forEach(function (s, i) {
+          var rc = i === 0 ? " r1" : i === 1 ? " r2" : i === 2 ? " r3" : "";
+          html += "<tr><td><span class=\"rank-badge" + rc + "\">" + (i + 1) + "</span></td><td>" + esc(s.name) + ratingBadgeHtml(s.rating) + '</td><td class="num tabular">' + s.wins + '</td><td class="num tabular">' + s.losses + "</td></tr>";
+        });
+        html += "</tbody></table></div>";
+        if (editable) {
+          if (ui.confirmDeleteId === t.id) {
+            html += '<div class="history-actions"><span class="muted" style="align-self:center;">本当に削除しますか?</span> <button class="btn btn-danger btn-sm" data-action="confirm-delete-history" data-id="' + t.id + '">削除する</button> <button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div>';
+          } else {
+            html += '<div class="history-actions"><button class="btn btn-danger btn-sm" data-action="delete-history" data-id="' + t.id + '">この記録を削除</button></div>';
+          }
+        }
+        html += "</div></details>";
+      });
+    }
+    var lifetime = computeLifetime(state.history);
+    if (lifetime.length > 0) {
+      html += '<div class="section-title">通算成績</div>';
+      html += '<div class="table-scroll"><table class="standings-table"><thead><tr><th>エントリー</th><th class="num">大会数</th><th class="num">勝</th><th class="num">敗</th><th class="num">勝率</th></tr></thead><tbody>';
+      lifetime.forEach(function (r) {
+        var total = r.wins + r.losses;
+        var rate = total > 0 ? Math.round((r.wins / total) * 100) + "%" : "-";
+        html += "<tr><td>" + esc(r.name) + '</td><td class="num tabular">' + r.events + '</td><td class="num tabular">' + r.wins + '</td><td class="num tabular">' + r.losses + '</td><td class="num tabular">' + rate + "</td></tr>";
+      });
+      html += "</tbody></table></div>";
+    }
+    return html;
+  }
+
+  /* ============ Rendering: tournament bracket ============ */
+  function bracketSeedTagHtml(source) {
+    return source ? ' <span class="trn-seed-tag">' + esc(source.tableName) + " " + source.rank + "位</span>" : "";
+  }
+
+  function bracketDiagramTeamBoxHtml(name, isWinner, isPending) {
+    if (isPending) return '<div class="bracket-team-box pending">未定</div>';
+    return '<div class="bracket-team-box' + (isWinner ? " winner" : "") + '">' + esc(name) + "</div>";
+  }
+
+  function renderBracketDiagram(b) {
+    // CSS Grid layout (not nested flex + align-items:stretch): each round's
+    // column is a fixed grid-template-columns track, and each round r match
+    // at index i explicitly spans grid rows [2 + i*2^r, 2 + (i+1)*2^r) out of
+    // leafCount base row-tracks (row 1 is reserved for the round-title row).
+    // This "row-span doubling" makes every match's box land exactly centered
+    // over the two earlier-round matches that feed it, without depending on
+    // any browser resolving a multi-level flex height-stretch chain -- that
+    // chain rendered fine in desktop-browser testing but collapsed to
+    // invisible on at least one real mobile browser, so it's avoided here.
+    var totalRounds = b.rounds.length;
+    var leafCount = b.rounds[0].length;
+    // Explicit min-width/min-height (computed from the same track sizes used
+    // below) as a hard floor: even if CSS Grid track sizing were to somehow
+    // fail to apply on a particular engine, the wrapper still reserves real
+    // visible space instead of collapsing to 0x0 and disappearing entirely.
+    var diagramMinWidth = totalRounds * 118 + 110 + totalRounds * 20;
+    var diagramMinHeight = 24 + leafCount * 56;
+    var html = '<div class="bracket-diagram-wrap"><div class="bracket-diagram" style="min-width:' + diagramMinWidth + 'px; min-height:' + diagramMinHeight + 'px; grid-template-columns: repeat(' + totalRounds + ', 118px) 110px; grid-template-rows: auto repeat(' + leafCount + ', 56px);">';
+    for (var r = 0; r < totalRounds; r++) {
+      var isFinal = r === totalRounds - 1;
+      var span = Math.pow(2, r);
+      html += '<div class="bracket-round-title" style="grid-column:' + (r + 1) + ';">' + roundLabel(totalRounds, r) + "</div>";
+      b.rounds[r].forEach(function (m, i) {
+        var rowStart = 2 + i * span;
+        var rowEnd = rowStart + span;
+        var connCls = isFinal ? " conn-final" : (i % 2 === 0 ? " conn-top" : " conn-bottom");
+        html += '<div class="bracket-match-slot' + connCls + '" style="grid-column:' + (r + 1) + "; grid-row:" + rowStart + " / " + rowEnd + ';">';
+        if (m.bye) {
+          html += bracketDiagramTeamBoxHtml(m.winnerName, true, false);
+          html += '<div class="bracket-team-box pending">(不戦勝)</div>';
+        } else {
+          html += m.playerAId ? bracketDiagramTeamBoxHtml(m.playerAName, m.status === "done" && m.winnerId === m.playerAId, false) : bracketDiagramTeamBoxHtml(null, false, true);
+          html += m.playerBId ? bracketDiagramTeamBoxHtml(m.playerBName, m.status === "done" && m.winnerId === m.playerBId, false) : bracketDiagramTeamBoxHtml(null, false, true);
+        }
+        html += "</div>";
+      });
+    }
+    var finalRound = b.rounds[totalRounds - 1];
+    var champion = finalRound[0] && finalRound[0].status === "done" ? finalRound[0].winnerName : null;
+    html += '<div class="bracket-round-title" style="grid-column:' + (totalRounds + 1) + ';">優勝</div>';
+    html += '<div class="bracket-champion-col" style="grid-column:' + (totalRounds + 1) + "; grid-row: 2 / " + (2 + leafCount) + ';"><div class="bracket-champion-box' + (champion ? "" : " pending") + '">' + (champion ? "🏆 " + esc(champion) : "?") + "</div></div>";
+    html += "</div></div>";
+    return html;
+  }
+
+  function bracketMatchCard(m, editable) {
+    var open = ui.openMatchId === m.id;
+    var html = '<div class="match-card" data-match="' + m.id + '">';
+    if (m.bye) {
+      html += '<div class="match-top"><div class="match-players">';
+      html += '<span class="player-name winner">' + esc(m.winnerName) + "</span>";
+      html += '<span class="vs-dot" aria-hidden="true"></span>';
+      html += '<span class="player-name muted">(不戦勝)</span>';
+      html += '</div><div class="match-meta"><span class="status-pill done">終了</span></div></div>';
+      html += "</div>";
+      return html;
+    }
+    var hasBoth = !!(m.playerAId && m.playerBId);
+    var aWin = m.status === "done" && m.winnerId === m.playerAId;
+    var bWin = m.status === "done" && m.winnerId === m.playerBId;
+    html += '<div class="match-top"><div class="match-players">';
+    if (hasBoth) {
+      html += (m.status === "done" ? resultMarkHtml(aWin) : "") + '<span class="player-name' + (aWin ? " winner" : "") + '">' + esc(m.playerAName) + ratingBadgeHtml(m.playerARating) + bracketSeedTagHtml(m.playerASource) + "</span>";
+      html += '<span class="vs-dot" aria-hidden="true"></span>';
+      html += (m.status === "done" ? resultMarkHtml(bWin) : "") + '<span class="player-name' + (bWin ? " winner" : "") + '">' + esc(m.playerBName) + ratingBadgeHtml(m.playerBRating) + bracketSeedTagHtml(m.playerBSource) + "</span>";
+    } else {
+      html += '<span class="player-name muted">前の試合の勝者待ち</span>';
+    }
+    html += '</div><div class="match-meta"><span class="status-pill ' + m.status + '">' + statusLabel(m.status) + "</span></div></div>";
+    if (!hasBoth) { html += "</div>"; return html; }
+    if (m.status === "done") {
+      html += '<div class="match-score mono">' + m.scoreA + " – " + m.scoreB + (editable ? ' &nbsp;·&nbsp; <button class="btn btn-ghost btn-sm" data-action="reopen-bracket-match" data-id="' + m.id + '">編集</button>' : "") + "</div>";
+    } else if (editable) {
+      if (!open) {
+        html += '<div class="match-actions"><button class="btn btn-ghost btn-sm" data-action="open-bracket-match" data-id="' + m.id + '">結果を入力する</button></div>';
+      } else {
+        var ds = ui.draftScores[m.id] || { a: 0, b: 0 };
+        html += '<div class="match-body"><div class="match-controls">';
+        html += '<div class="score-row"><span class="name">' + esc(m.playerAName) + '</span><div class="stepper"><button data-action="score-dec" data-id="' + m.id + '" data-side="a" aria-label="減らす">−</button><output class="mono">' + ds.a + '</output><button data-action="score-inc" data-id="' + m.id + '" data-side="a" aria-label="増やす">+</button></div></div>';
+        html += '<div class="score-row"><span class="name">' + esc(m.playerBName) + '</span><div class="stepper"><button data-action="score-dec" data-id="' + m.id + '" data-side="b" aria-label="減らす">−</button><output class="mono">' + ds.b + '</output><button data-action="score-inc" data-id="' + m.id + '" data-side="b" aria-label="増やす">+</button></div></div>';
+        html += "</div>";
+        html += '<div class="match-actions"><button class="btn btn-primary btn-sm" data-action="confirm-bracket-match" data-id="' + m.id + '"' + (ds.a === ds.b ? " disabled" : "") + '>結果を確定</button> <button class="btn btn-ghost btn-sm" data-action="close-bracket-match">閉じる</button></div>';
+        html += "</div>";
+      }
+    }
+    html += "</div>";
+    return html;
+  }
+
+  function renderBracketView(b, editable) {
+    var html = "";
+    var totalRounds = b.rounds.length;
+    var finalRound = b.rounds[totalRounds - 1];
+    var champion = finalRound[0] && finalRound[0].status === "done" ? finalRound[0].winnerName : null;
+    html += '<div class="card" style="margin-bottom:16px;"><h2 style="margin-top:0;">' + esc(b.name) + "</h2>";
+    html += '<p class="muted">対象: ' + b.sourceNames.map(esc).join("・") + " (各上位" + b.advanceCount + "チーム)</p>";
+    if (champion) html += '<div class="h-winner" style="font-size:16px;">🏆 優勝: ' + esc(champion) + "</div>";
+    html += "</div>";
+
+    html += renderBracketDiagram(b);
+
+    html += legPanel(b, editable);
+
+    for (var r = 0; r < totalRounds; r++) {
+      html += '<div class="trn-section"><div class="section-title" style="margin-top:0;">' + roundLabel(totalRounds, r) + "</div>";
+      b.rounds[r].forEach(function (m) {
+        html += bracketMatchCard(m, editable);
+      });
+      html += "</div>";
+    }
+
+    if (editable) {
+      html += '<hr class="divider"><div class="stack">';
+      var pc = ui.pendingConfirm;
+      if (pc && pc.type === "finish-tournament") {
+        html += '<div class="card" style="padding:14px 16px;"><p style="margin-top:0;">このトーナメント表を終了して記録に残しますか?</p><div class="match-actions"><button class="btn btn-primary btn-sm" data-action="confirm-finish-tournament">はい、終了する</button><button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div></div>';
+      } else if (pc && pc.type === "cancel-tournament") {
+        html += '<div class="card" style="padding:14px 16px;"><p style="margin-top:0;">このトーナメント表を中止して破棄しますか?この操作は取り消せません。</p><div class="match-actions"><button class="btn btn-danger btn-sm" data-action="confirm-cancel-tournament">はい、中止する</button><button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div></div>';
+      } else {
+        if (champion) html += '<button class="btn btn-primary btn-block" data-action="finish-tournament">このトーナメント表を終了して記録する</button>';
+        html += '<button class="btn btn-danger btn-block" data-action="cancel-tournament">このトーナメント表を中止する</button>';
+      }
+      html += "</div>";
+    }
+    return html;
+  }
+
+  function renderTournamentSetup(editable) {
+    var ts = ui.tournamentSetup;
+    var finished = state.history;
+    var html = "";
+    if (!editable) {
+      html += '<div class="card"><div class="empty-state"><div class="icon">🏆</div><p>まだトーナメント表はありません。<br>幹事が対象のロビン表を選んで作成すると、ここに表示されます。</p></div></div>';
+      return html;
+    }
+    if (finished.length < 2) {
+      html += '<div class="card"><div class="empty-state"><div class="icon">🏆</div><p>トーナメント表を作るには、2つ以上のロビン表が終了している必要があります。</p></div></div>';
+      return html;
+    }
+    html += '<div class="card"><h2 style="margin-top:0;">トーナメント表をつくる</h2><div class="stack">';
+    html += '<div class="field"><label>対象にするロビン表 (2つ以上選択)</label><div class="trn-source-list">';
+    finished.forEach(function (t) {
+      var checked = ts.selectedIds.indexOf(t.id) !== -1;
+      var d = new Date(t.finishedAt);
+      var dateStr = isNaN(d.getTime()) ? "" : (d.getMonth() + 1) + "/" + d.getDate();
+      html += '<button type="button" class="trn-source-row' + (checked ? " checked" : "") + '" data-action="toggle-tournament-source" data-id="' + t.id + '">';
+      html += '<span class="trn-source-check">' + (checked ? "☑" : "☐") + "</span>";
+      html += '<span class="trn-source-info"><b>' + esc(t.name) + '</b><span class="muted mono"> ' + dateStr + " ・ " + esc(FORMAT_LABEL[t.format] || "シングルス") + " ・ " + (t.finalStandings || []).length + "エントリー</span></span>";
+      html += "</button>";
+    });
+    html += "</div></div>";
+    html += '<div class="field"><label>各ロビンから上位何チーム進出</label><div class="stepper"><button data-action="tournament-advance-dec">−</button><output class="mono">' + ts.advanceCount + '位まで</output><button data-action="tournament-advance-inc">+</button></div></div>';
+    var selectedEntries = finished.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
+    var seeds = selectedEntries.length >= 2 ? buildBracketSeeds(selectedEntries, ts.advanceCount) : [];
+    var totalSeeds = seeds.length;
+    html += '<p class="muted">' + (selectedEntries.length >= 2 ? "合計 " + totalSeeds + " チームが進出します" : "ロビン表を2つ以上選んでください") + "</p>";
+    var canCreate = selectedEntries.length >= 2 && totalSeeds >= 2;
+
+    if (canCreate) {
+      html += '<div class="field"><label>トーナメント表への配置</label><div class="seg" role="group" aria-label="配置方法">';
+      html += '<button data-action="set-tournament-mode" data-mode="auto" aria-pressed="' + (ts.mode !== "manual") + '">自動配置（成績順に対極）</button>';
+      html += '<button data-action="set-tournament-mode" data-mode="manual" aria-pressed="' + (ts.mode === "manual") + '">手動配置</button>';
+      html += "</div></div>";
+
+      if (ts.mode === "manual") {
+        var size = nextPow2(totalSeeds);
+        var used = {};
+        seeds.forEach(function (s) {
+          var p = ts.manualPositions[s.id];
+          if (p) used[p] = (used[p] || 0) + 1;
+        });
+        html += '<div class="field"><label>勝ち上がったチームに配置番号を割り振ってください(1〜' + size + ")</label><div class=\"trn-manual-list\">";
+        seeds.forEach(function (s) {
+          var p = ts.manualPositions[s.id] || "";
+          var dup = p && used[p] > 1;
+          html += '<div class="trn-manual-row' + (dup ? " dup" : "") + '">';
+          html += '<span class="trn-manual-name">' + esc(s.name) + '<span class="muted mono">' + esc(s.source.tableName) + " " + s.source.rank + "位</span></span>";
+          html += '<select class="trn-manual-select" data-action="set-manual-position" data-key="' + esc(s.id) + '"><option value="">-</option>';
+          for (var n = 1; n <= size; n++) {
+            html += '<option value="' + n + '"' + (String(p) === String(n) ? " selected" : "") + '>' + n + "</option>";
+          }
+          html += "</select></div>";
+        });
+        html += "</div></div>";
+        var assignedCount = seeds.filter(function (s) { return !!ts.manualPositions[s.id]; }).length;
+        var hasDup = Object.keys(used).some(function (k) { return used[k] > 1; });
+        if (hasDup) html += '<p class="muted" style="color:var(--red);">同じ配置番号が重複しています</p>';
+        else if (assignedCount < totalSeeds) html += '<p class="muted">全チームに配置番号を割り振ってください（あと' + (totalSeeds - assignedCount) + "）</p>";
+        else html += '<p class="muted">配置完了です</p>';
+        canCreate = canCreate && assignedCount === totalSeeds && !hasDup;
+      } else {
+        html += '<p class="muted">成績上位のチームが対極に配置され、決勝まで当たらないよう自動で組まれます</p>';
+      }
+    }
+
+    html += '<button class="btn btn-primary btn-block" data-action="create-tournament"' + (canCreate ? "" : " disabled") + ">トーナメント表を作成</button>";
+    html += "</div></div>";
+    return html;
+  }
+
+  function renderTournamentPastList() {
+    if (!state.bracketHistory || state.bracketHistory.length === 0) return "";
+    var html = '<div class="section-title">過去のトーナメント</div>';
+    state.bracketHistory.forEach(function (b) {
+      var d = new Date(b.finishedAt);
+      var dateStr = isNaN(d.getTime()) ? "" : (d.getMonth() + 1) + "/" + d.getDate();
+      html += '<details class="history-item"><summary><div><h3>' + esc(b.name) + '</h3><div class="h-date mono">' + dateStr + " ・ " + esc((b.sourceNames || []).join("・")) + '</div></div><div class="h-winner">🏆 ' + esc(b.champion || "-") + "</div></summary>";
+      html += '<div class="history-standings">';
+      html += renderBracketDiagram(b);
+      (b.rounds || []).forEach(function (round, r) {
+        html += '<div class="section-title" style="margin:12px 0 6px;">' + roundLabel(b.rounds.length, r) + "</div>";
+        round.forEach(function (m) {
+          html += bracketMatchCard(m, false);
+        });
+      });
+      html += "</div></details>";
+    });
+    return html;
+  }
+
+  /* ============ Rendering: new-table setup ============ */
+  function memberPlaceholder(format, idx) {
+    var size = FORMAT_SIZE[format];
+    if (size === 1) return "名前を入力してEnterまたは追加";
+    return "選手" + (idx + 1);
+  }
+
+  function renderNewTableForm() {
+    var nt = ui.newTable;
+    var size = FORMAT_SIZE[nt.format];
+    var html = '<div class="card"><h2 style="margin-top:0;">新しいロビン表をつくる</h2><div class="stack">';
+    html += '<div class="field"><label for="t-name">ロビン表の名前</label><input type="text" id="t-name" placeholder="' + esc(defaultTableName()) + '" value="' + esc(nt.name) + '"></div>';
+
+    html += '<div class="field"><label>対戦形式</label><div class="seg" role="group" aria-label="対戦形式">';
+    FORMAT_ORDER.forEach(function (f) {
+      html += '<button data-action="set-format" data-format="' + f + '" aria-pressed="' + (nt.format === f) + '">' + FORMAT_LABEL[f] + "</button>";
+    });
+    html += "</div></div>";
+
+    html += '<div class="field"><label>エントリー (' + nt.entrants.length + FORMAT_UNIT[nt.format] + ")</label>";
+    html += '<div class="add-row"><div class="member-inputs">';
+    for (var i = 0; i < size; i++) {
+      html += '<input type="text" id="entrant-member-' + i + '" placeholder="' + esc(memberPlaceholder(nt.format, i)) + '" value="' + esc((nt.entrantDraft && nt.entrantDraft[i]) || "") + '">';
+    }
+    html += "</div>";
+    var ratingLabel = size === 1 ? "Rt.(必須)" : "合計Rt.(必須)";
+    html += '<input type="number" inputmode="numeric" id="entrant-rating" class="rating-input" placeholder="' + esc(ratingLabel) + '" value="' + esc(nt.ratingDraft || "") + '">';
+    html += '<button class="btn btn-ghost" data-action="add-entrant">追加</button></div>';
+    if (nt.entrants.length > 0) {
+      html += '<div class="player-list">' + nt.entrants.map(function (p) {
+        return '<div class="player-chip">' + esc(p.name) + ratingBadgeHtml(p.rating) + ' <button data-action="remove-entrant" data-id="' + p.id + '" aria-label="削除">×</button></div>';
+      }).join("") + "</div>";
+    }
+    html += "</div>";
+
+    html += '<div class="row-2">';
+    html += '<div class="field"><label>レグ数</label><div class="stepper"><button data-action="newtable-legcount-dec">−</button><output class="mono">' + nt.legCount + "</output><button data-action=\"newtable-legcount-inc\">+</button></div></div>";
+    html += '<div class="field"><label>使用ボード数</label><div class="stepper"><button data-action="setup-boards-dec">−</button><output class="mono">' + nt.boards + "台</output><button data-action=\"setup-boards-inc\">+</button></div></div>";
+    html += "</div>";
+
+    html += '<div class="field"><label>レグ構成</label><div class="leg-edit-grid">';
+    nt.legs.forEach(function (leg, i) {
+      html += '<div class="leg-row"><span class="leg-num">' + (i + 1) + "Leg目</span><select data-action=\"set-newtable-leg-type\" data-leg=\"" + i + '">' + legOptionsHtml(i, leg) + "</select></div>";
+    });
+    html += "</div></div>";
+
+    var canStart = nt.entrants.length >= 2;
+    var matchCount = nt.entrants.length >= 2 ? nt.entrants.length * (nt.entrants.length - 1) / 2 : 0;
+    html += '<button class="btn btn-primary btn-block" data-action="start-table"' + (canStart ? "" : " disabled") + ">このロビン表を開始 (" + matchCount + "試合)</button>";
+    if (!canStart) html += '<p class="muted">2' + FORMAT_UNIT[nt.format] + '以上のエントリーを登録してください。</p>';
+    html += '<button class="btn btn-ghost btn-block" data-action="hide-new-table">キャンセル</button>';
+    html += "</div></div>";
+    return html;
+  }
+
+  function letterName(n) {
+    // 0 -> A, 1 -> B, ... 25 -> Z, 26 -> AA, 27 -> AB, ... (Excel-style)
+    var s = "";
+    n = n + 1;
+    while (n > 0) {
+      var rem = (n - 1) % 26;
+      s = String.fromCharCode(65 + rem) + s;
+      n = Math.floor((n - 1) / 26);
+    }
+    return s;
+  }
+
+  function defaultTableName() {
+    return "ロビン" + letterName(state.tables.length);
+  }
+
+  function tableProgress(t) {
+    var done = t.matches.filter(function (m) { return m.status === "done"; }).length;
+    return done + "/" + t.matches.length + "試合終了";
+  }
+
+  function renderTableList(editable) {
+    var html = "";
+    if (editable) {
+      if (ui.showNewTableForm) {
+        html += renderNewTableForm();
+      } else {
+        html += '<button class="btn btn-primary btn-block" data-action="show-new-table">＋ ロビン表を増やす</button>';
+      }
+    }
+    if (state.tables.length === 0) {
+      if (!editable) {
+        html += '<div class="card"><div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。<br>幹事がロビン表を作成すると、ここに対戦表が表示されます。</p></div></div>';
+      } else if (!ui.showNewTableForm) {
+        html += '<div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。上のボタンから最初のロビン表を作りましょう。</p></div>';
+      }
+    } else {
+      html += '<div class="table-list" style="margin-top:16px;">';
+      state.tables.forEach(function (t) {
+        html += '<div class="table-card"><div class="t-info"><h3>' + esc(t.name) + '</h3><div class="meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>' + t.entrants.length + FORMAT_UNIT[t.format] + '</span><span>📋 ' + t.boardCount + 'ボード</span></div><div class="progress">' + tableProgress(t) + '</div></div><button class="btn btn-ghost btn-sm" data-action="open-table" data-id="' + t.id + '">開く</button></div>';
+      });
+      html += "</div>";
+    }
+    return html;
+  }
+
+  function renderTableDetail(t, editable) {
+    var html = '<button class="btn btn-ghost btn-sm" data-action="back-to-list" style="margin-bottom:14px;">← ロビン表一覧に戻る</button>';
+    html += '<div class="t-head"><div>';
+    html += "<h2>" + esc(t.name) + "</h2>";
+    html += '<div class="t-meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>👥 ' + t.entrants.length + FORMAT_UNIT[t.format] + "</span><span>📋 " + t.boardCount + "ボード</span></div>";
+    html += "</div></div>";
+
+    html += legPanel(t, editable);
+    html += handicapPanel(t, editable);
+
+    html += '<div class="tabs" role="tablist">';
+    [["matches", "対戦表"], ["standings", "順位表"]].forEach(function (tab) {
+      html += '<button class="tab' + (ui.tab === tab[0] ? " active" : "") + '" data-action="set-tab" data-tab="' + tab[0] + '" role="tab" aria-selected="' + (ui.tab === tab[0]) + '">' + tab[1] + "</button>";
+    });
+    html += "</div>";
+
+    if (ui.tab === "matches") html += renderMatchesTab(t, editable);
+    else html += renderStandingsTab(t);
+
+    if (editable) {
+      var pendingCount = t.matches.filter(function (m) { return m.status !== "done"; }).length;
+      html += '<hr class="divider">';
+      html += '<div class="stack">';
+      var pc = ui.pendingConfirm;
+      if (pc && pc.tableId === t.id && pc.type === "finish") {
+        html += '<div class="card" style="padding:14px 16px;"><p style="margin-top:0;">このロビン表を終了して記録に残しますか?' + (pendingCount > 0 ? "未消化の対戦が" + pendingCount + "件あります。" : "") + '</p><div class="match-actions"><button class="btn btn-primary btn-sm" data-action="confirm-finish-table" data-id="' + t.id + '">はい、終了する</button><button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div></div>';
+      } else if (pc && pc.tableId === t.id && pc.type === "cancel") {
+        html += '<div class="card" style="padding:14px 16px;"><p style="margin-top:0;">このロビン表を中止して破棄しますか?この操作は取り消せません。</p><div class="match-actions"><button class="btn btn-danger btn-sm" data-action="confirm-cancel-table" data-id="' + t.id + '">はい、中止する</button><button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div></div>';
+      } else {
+        if (pendingCount > 0) html += '<p class="muted">未消化の対戦が' + pendingCount + "件あります。</p>";
+        html += '<button class="btn btn-primary btn-block" data-action="finish-table" data-id="' + t.id + '">このロビン表を終了して記録する</button>';
+        html += '<button class="btn btn-danger btn-block" data-action="cancel-table" data-id="' + t.id + '">このロビン表を中止する</button>';
+      }
+      html += "</div>";
+    }
+    return html;
+  }
+
+  function qrPanelHtml() {
+    if (!QR_SVG) return "";
+    return '<div class="qr-panel"><p class="qr-caption">📱 このQRコードを読み取ると、他の端末からもリアルタイムでロビンの状況を見られます</p><div class="qr-code-box">' + QR_SVG + "</div>" +
+      '<p class="qr-url">' + SHARE_URL + "</p>" +
+      '<button class="btn btn-ghost btn-sm" data-action="copy-share-url">🔗 リンクをコピー</button>' +
+      "</div>";
+  }
+
+  function render() {
+    var readOnly = viewMode === "view" || !canWrite;
+
+    // role toggle
+    var rt = document.getElementById("role-toggle");
+    rt.innerHTML =
+      '<button data-action="mode-auto" aria-pressed="' + (viewMode === "auto") + '">操作する</button>' +
+      '<button data-action="mode-view" aria-pressed="' + (viewMode === "view") + '">閲覧のみ</button>';
+
+    // readonly banner
+    var banner = document.getElementById("readonly-banner");
+    if (ui.showPasswordPrompt) {
+      banner.innerHTML =
+        '<div class="readonly-banner password-banner">' +
+          '<div class="password-label">🔒 操作するにはパスワードが必要です</div>' +
+          '<div class="password-row">' +
+            '<input type="password" id="password-input" class="password-input" inputmode="numeric" autocomplete="off" placeholder="パスワード">' +
+            '<button class="btn btn-primary btn-sm" data-action="submit-password">解除</button>' +
+            '<button class="btn btn-ghost btn-sm" data-action="cancel-password">キャンセル</button>' +
+          '</div>' +
+          (ui.passwordError ? '<div class="password-error">パスワードが違います</div>' : "") +
+        '</div>';
+    } else if (!canWrite && writeChecked) {
+      banner.innerHTML = '<div class="readonly-banner">👀 このリンクは閲覧専用です。編集するには幹事に編集権限の共有を依頼してください。</div>' + qrPanelHtml();
+    } else if (viewMode === "view") {
+      banner.innerHTML = '<div class="readonly-banner">閲覧モードで表示中です。操作するには「操作する」を押してください。</div>' + qrPanelHtml();
+    } else {
+      banner.innerHTML = "";
+    }
+
+    var root = document.getElementById("root");
+    var html = "";
+
+    // 履歴 (history) is only shown to the organizer (操作する mode). A
+    // read-only / view-only visitor (閲覧のみ, including anyone who opened
+    // the shared link) only needs ロビン表 and トーナメント表.
+    var visibleTabs = readOnly
+      ? [["tables", "ロビン表一覧"], ["tournament", "トーナメント"]]
+      : [["tables", "ロビン表一覧"], ["history", "履歴"], ["tournament", "トーナメント"]];
+    if (readOnly && ui.topTab === "history") ui.topTab = "tables";
+
+    html += '<div class="top-nav" role="tablist">';
+    visibleTabs.forEach(function (tab) {
+      html += '<button class="tab' + (ui.topTab === tab[0] ? " active" : "") + '" data-action="set-top-tab" data-tab="' + tab[0] + '" role="tab" aria-selected="' + (ui.topTab === tab[0]) + '">' + tab[1] + "</button>";
+    });
+    html += "</div>";
+
+    if (ui.topTab === "history" && !readOnly) {
+      html += renderHistoryTab(!readOnly);
+    } else if (ui.topTab === "tournament") {
+      html += state.bracket ? renderBracketView(state.bracket, !readOnly) : renderTournamentSetup(!readOnly);
+      html += renderTournamentPastList();
+    } else {
+      var activeTable = ui.activeTableId ? state.tables.find(function (t) { return t.id === ui.activeTableId; }) : null;
+      if (activeTable) {
+        html += renderTableDetail(activeTable, !readOnly);
+      } else {
+        ui.activeTableId = null;
+        html += renderTableList(!readOnly);
+      }
+    }
+
+    root.innerHTML = html;
+    saveUiSnapshot();
+  }
+
+  /* ============ Document snapshot for republish ============ */
+  function buildFullDocument(newState) {
+    var scriptTag = document.getElementById("app-script").outerHTML;
+    var appShell =
+      '<div id="app">' +
+        '<header class="header"><div class="header-inner">' +
+          '<div class="brand"><div class="brand-icon" aria-hidden="true"></div>' +
+          '<div class="brand-text"><h1>トーナメント</h1><p>ラウンドロビン式ハウストーナメント盤</p></div></div>' +
+          '<div class="role-toggle" id="role-toggle" role="group" aria-label="表示モード"></div>' +
+        '</div></header>' +
+        '<div id="readonly-banner"></div>' +
+        '<main class="container" id="root"></main>' +
+      '</div>';
+    // Bare fragment: title + font link + style, then body content, then the
+    // state and app scripts — the same shape as the page's original source
+    // file. No <!doctype>/<html>/<head>/<body> wrapper: the runtime supplies
+    // that skeleton itself (and does so correctly), just like it does for a
+    // fresh publish of the source file.
+    return HEAD_BLOCK + "\n" +
+      appShell + "\n" +
+      '<div class="toast-wrap" id="toast-wrap" aria-live="polite"></div>\n' +
+      QR_LIB_BLOCK + "\n" +
+      '<script type="application/json" id="state-data">' + JSON.stringify(newState).replace(/</g, "\\u003c") + "<\/script>\n" +
+      scriptTag;
+  }
+
+  /* ============ Persistence ============ */
+  // Writes go straight to Firestore. Every other open tab/phone is
+  // subscribed to the same document (see the onSnapshot listener set up
+  // in Init below), so as soon as this write lands, it is pushed live to
+  // everyone -- no republish, no "shared version" pinning, no manual
+  // refresh needed.
+  var applyingRemote = false; // true while a remote snapshot is being applied
+  function persist(newState) {
+    var prevState = state;
+    state = newState;
+    render();
+    if (!dbReady || applyingRemote) { return; }
+    var payload;
+    try {
+      // Firestore documents can't hold arrays nested directly inside other
+      // arrays (this app's bracket.rounds is exactly that shape), so the
+      // whole state is stored as one JSON string field instead of native
+      // Firestore fields. This also sidesteps every other Firestore type
+      // restriction (Firestore's `undefined` cannot be stored either -
+      // JSON.stringify has always silently dropped it here, since this is
+      // the same round-trip the app used when it republished itself as
+      // one HTML file).
+      payload = JSON.stringify(newState);
+    } catch (e) {
+      toast("保存に失敗しました（データ形式エラー）");
+      return;
+    }
+    stateDocRef.set({ payload: payload, updatedAt: Date.now() }).then(function () {
+      writeChecked = true;
+      canWrite = true;
+    }).catch(function (err) {
+      writeChecked = true;
+      console.error("Firestore write failed", err);
+      if (err && err.code === "permission-denied") {
+        canWrite = false;
+        state = prevState;
+        render();
+        toast("閲覧専用のため保存できませんでした");
+      } else {
+        state = prevState;
+        render();
+        toast("保存に失敗しました。もう一度お試しください");
+      }
+    });
+  }
+
+  /* ============ Actions ============ */
+  function cloneState() {
+    return JSON.parse(JSON.stringify(state));
+  }
+
+  function resetNewTableDraft() {
+    ui.newTable = { format: "singles", name: "", entrants: [], entrantDraft: [], ratingDraft: "", legCount: 3, legs: defaultLegs(3), boards: 1 };
+  }
+
+  function handleAction(action, target) {
+    var id = target.getAttribute("data-id");
+
+    if (action === "mode-auto") {
+      if (unlocked) {
+        viewMode = "auto";
+        try { localStorage.setItem("dartsnight_viewmode", "auto"); } catch (e) {}
+        render();
+      } else {
+        ui.showPasswordPrompt = true;
+        ui.passwordError = false;
+        render();
+        var pwFocus = document.getElementById("password-input");
+        if (pwFocus) pwFocus.focus();
+      }
+      return;
+    }
+    if (action === "mode-view") {
+      viewMode = "view";
+      try { localStorage.setItem("dartsnight_viewmode", "view"); } catch (e) {}
+      ui.showPasswordPrompt = false;
+      ui.passwordError = false;
+      render();
+      return;
+    }
+    if (action === "copy-share-url") {
+      var doCopyToast = function (ok) { toast(ok ? "リンクをコピーしました" : "コピーできませんでした。URLを長押しして手動でコピーしてください"); };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(SHARE_URL).then(function () { doCopyToast(true); }, function () { doCopyToast(false); });
+      } else {
+        try {
+          var ta = document.createElement("textarea");
+          ta.value = SHARE_URL;
+          ta.style.position = "fixed";
+          ta.style.opacity = "0";
+          document.body.appendChild(ta);
+          ta.select();
+          var ok = document.execCommand("copy");
+          document.body.removeChild(ta);
+          doCopyToast(ok);
+        } catch (e) {
+          doCopyToast(false);
+        }
+      }
+      return;
+    }
+    if (action === "cancel-password") { ui.showPasswordPrompt = false; ui.passwordError = false; render(); return; }
+    if (action === "submit-password") {
+      var pwEl = document.getElementById("password-input");
+      var pwVal = (pwEl && pwEl.value) || "";
+      if (pwVal === EDIT_PASSWORD) {
+        unlocked = true;
+        try { localStorage.setItem(UNLOCK_KEY, "1"); } catch (e) {}
+        viewMode = "auto";
+        try { localStorage.setItem("dartsnight_viewmode", "auto"); } catch (e) {}
+        ui.showPasswordPrompt = false;
+        ui.passwordError = false;
+        render();
+        toast("操作モードを解除しました");
+      } else {
+        ui.passwordError = true;
+        render();
+        var pwEl2 = document.getElementById("password-input");
+        if (pwEl2) { pwEl2.focus(); pwEl2.select(); }
+      }
+      return;
+    }
+    if (action === "set-top-tab") { ui.topTab = target.getAttribute("data-tab"); render(); return; }
+    if (action === "set-tab") { ui.tab = target.getAttribute("data-tab"); ui.openMatchId = null; render(); return; }
+    if (action === "back-to-list") { ui.activeTableId = null; ui.openMatchId = null; render(); return; }
+    if (action === "open-table") { ui.activeTableId = id; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
+
+    /* ---- new table setup ---- */
+    if (action === "show-new-table") { ui.showNewTableForm = true; resetNewTableDraft(); render(); return; }
+    if (action === "hide-new-table") { ui.showNewTableForm = false; render(); return; }
+    if (action === "set-format") {
+      var fmt = target.getAttribute("data-format");
+      if (ui.newTable.entrants.length > 0 && fmt !== ui.newTable.format) {
+        toast("形式を変更したためエントリーをリセットしました");
+      }
+      ui.newTable.format = fmt;
+      ui.newTable.entrants = [];
+      ui.newTable.entrantDraft = [];
+      render();
+      return;
+    }
+    if (action === "add-entrant") {
+      var size = FORMAT_SIZE[ui.newTable.format];
+      var members = [];
+      for (var i = 0; i < size; i++) {
+        var el = document.getElementById("entrant-member-" + i);
+        var v = (el && el.value || "").trim();
+        if (!v) { toast("名前をすべて入力してください"); return; }
+        members.push(v);
+      }
+      var label = members.join("・");
+      if (ui.newTable.entrants.some(function (p) { return p.name === label; })) { toast("同じエントリーがあります"); return; }
+      var ratingEl = document.getElementById("entrant-rating");
+      var ratingRaw = (ratingEl && ratingEl.value || "").trim();
+      if (ratingRaw === "") {
+        toast(size === 1 ? "Rt.を入力してください" : "合計Rt.を入力してください");
+        return;
+      }
+      var rating = Number(ratingRaw);
+      if (!isFinite(rating)) {
+        toast(size === 1 ? "Rt.には数値を入力してください" : "合計Rt.には数値を入力してください");
+        return;
+      }
+      ui.newTable.entrants.push({ id: uid("p"), name: label, members: members, rating: rating });
+      ui.newTable.entrantDraft = [];
+      ui.newTable.ratingDraft = "";
+      for (var j = 0; j < size; j++) {
+        var elj = document.getElementById("entrant-member-" + j);
+        if (elj) elj.value = "";
+      }
+      if (ratingEl) ratingEl.value = "";
+      render();
+      var first = document.getElementById("entrant-member-0");
+      if (first) first.focus();
+      return;
+    }
+    if (action === "remove-entrant") {
+      ui.newTable.entrants = ui.newTable.entrants.filter(function (p) { return p.id !== id; });
+      render();
+      return;
+    }
+    if (action === "newtable-legcount-inc" || action === "newtable-legcount-dec") {
+      var delta = action === "newtable-legcount-inc" ? 2 : -2;
+      var newCount = Math.max(1, Math.min(9, ui.newTable.legCount + delta));
+      ui.newTable.legCount = newCount;
+      var legs = ui.newTable.legs.slice(0, newCount);
+      while (legs.length < newCount) legs.push({ type: "01", target: 501 });
+      ui.newTable.legs = legs;
+      render();
+      return;
+    }
+    if (action === "set-newtable-leg-type") {
+      var idx = parseInt(target.getAttribute("data-leg"), 10);
+      ui.newTable.legs[idx] = parseLegValue(target.value);
+      return;
+    }
+    if (action === "setup-boards-inc") { ui.newTable.boards = Math.min(8, ui.newTable.boards + 1); render(); return; }
+    if (action === "setup-boards-dec") { ui.newTable.boards = Math.max(1, ui.newTable.boards - 1); render(); return; }
+
+    if (action === "start-table") {
+      var nt = ui.newTable;
+      if (nt.entrants.length < 2) return;
+      var nameInput = document.getElementById("t-name");
+      var tName = (nameInput && nameInput.value.trim()) || defaultTableName();
+      var matches = generateSchedule(nt.entrants, nt.boards);
+      var newTable = {
+        id: uid("t"),
+        name: tName,
+        format: nt.format,
+        boardCount: nt.boards,
+        legs: nt.legs.slice(),
+        entrants: nt.entrants.slice(),
+        matches: matches,
+        handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
+        createdAt: nowIso()
+      };
+      var ns = cloneState();
+      ns.tables.push(newTable);
+      ui.showNewTableForm = false;
+      resetNewTableDraft();
+      ui.activeTableId = newTable.id;
+      ui.tab = "matches";
+      persist(ns);
+      return;
+    }
+
+    /* ---- leg config editing on an existing table ---- */
+    if (action === "edit-legs") {
+      var tbl = state.tables.find(function (x) { return x.id === id; }) || (state.bracket && state.bracket.id === id ? state.bracket : null);
+      ui.editingLegsTableId = id;
+      ui.editLegs = tbl ? tbl.legs.map(function (l) { return { type: l.type, target: l.target }; }) : defaultLegs(3);
+      render();
+      return;
+    }
+    if (action === "cancel-edit-legs") { ui.editingLegsTableId = null; ui.editLegs = null; render(); return; }
+    if (action === "editlegs-count-inc" || action === "editlegs-count-dec") {
+      var d2 = action === "editlegs-count-inc" ? 2 : -2;
+      var n2 = Math.max(1, Math.min(9, ui.editLegs.length + d2));
+      var legs2 = ui.editLegs.slice(0, n2);
+      while (legs2.length < n2) legs2.push({ type: "01", target: 501 });
+      ui.editLegs = legs2;
+      render();
+      return;
+    }
+    if (action === "set-leg-type") {
+      var idx2 = parseInt(target.getAttribute("data-leg"), 10);
+      ui.editLegs[idx2] = parseLegValue(target.value);
+      return;
+    }
+    if (action === "save-legs") {
+      var ns9 = cloneState();
+      var t9 = ns9.tables.find(function (x) { return x.id === id; });
+      if (!t9 && ns9.bracket && ns9.bracket.id === id) t9 = ns9.bracket;
+      if (t9) t9.legs = ui.editLegs.slice();
+      ui.editingLegsTableId = null;
+      ui.editLegs = null;
+      persist(ns9);
+      return;
+    }
+
+    var activeTable = ui.activeTableId ? state.tables.find(function (x) { return x.id === ui.activeTableId; }) : null;
+
+    if (action === "open-match") {
+      if (!activeTable) return;
+      ui.openMatchId = id;
+      ui.draftScores[id] = { a: 0, b: 0 };
+      var mm0 = activeTable.matches.find(function (m) { return m.id === id; });
+      ui.draftBoard[id] = mm0 ? mm0.board : 1;
+      render();
+      return;
+    }
+    if (action === "close-match") { ui.openMatchId = null; render(); return; }
+    if (action === "reopen-match") {
+      if (!activeTable) return;
+      var mm = activeTable.matches.find(function (m) { return m.id === id; });
+      if (!mm) return;
+      ui.openMatchId = id;
+      ui.draftScores[id] = { a: mm.scoreA, b: mm.scoreB };
+      ui.draftBoard[id] = mm.board;
+      var ns2 = cloneState();
+      var t2 = ns2.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var m2 = t2.matches.find(function (m) { return m.id === id; });
+      m2.status = "in_progress";
+      persist(ns2);
+      return;
+    }
+    if (action === "draft-board") { ui.draftBoard[id] = parseInt(target.value, 10); return; }
+    if (action === "set-handicap") {
+      if (!activeTable) return;
+      var hcMode = target.getAttribute("data-mode");
+      var hcIdx = parseInt(target.getAttribute("data-idx"), 10);
+      var hcRaw = (target.value || "").trim();
+      var hcVal = hcRaw === "" ? null : Number(hcRaw);
+      if (hcVal !== null && !isFinite(hcVal)) hcVal = null;
+      var nsH = cloneState();
+      var tH = nsH.tables.find(function (x) { return x.id === ui.activeTableId; });
+      if (!tH) return;
+      ensureHandicap(tH);
+      tH.handicap[hcMode][hcIdx] = hcVal;
+      persist(nsH);
+      return;
+    }
+    if (action === "start-match") {
+      if (!activeTable) return;
+      var ns3 = cloneState();
+      var t3 = ns3.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var m3 = t3.matches.find(function (m) { return m.id === id; });
+      m3.status = "in_progress";
+      m3.board = ui.draftBoard[id] || m3.board;
+      persist(ns3);
+      return;
+    }
+    if (action === "revert-match") {
+      if (!activeTable) return;
+      var ns4 = cloneState();
+      var t4 = ns4.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var m4 = t4.matches.find(function (m) { return m.id === id; });
+      m4.status = "pending"; m4.scoreA = 0; m4.scoreB = 0; m4.winnerId = null;
+      ui.openMatchId = null;
+      persist(ns4);
+      return;
+    }
+    if (action === "score-inc" || action === "score-dec") {
+      var side = target.getAttribute("data-side");
+      var ds = ui.draftScores[id] || { a: 0, b: 0 };
+      var delta2 = action === "score-inc" ? 1 : -1;
+      ds[side] = Math.max(0, ds[side] + delta2);
+      ui.draftScores[id] = ds;
+      render();
+      return;
+    }
+    if (action === "confirm-match") {
+      if (!activeTable) return;
+      var ds2 = ui.draftScores[id];
+      if (!ds2 || ds2.a === ds2.b) return;
+      var ns5 = cloneState();
+      var t5 = ns5.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var m5 = t5.matches.find(function (m) { return m.id === id; });
+      m5.status = "done";
+      m5.scoreA = ds2.a; m5.scoreB = ds2.b;
+      m5.winnerId = ds2.a > ds2.b ? m5.playerAId : m5.playerBId;
+      ui.openMatchId = null;
+      persist(ns5);
+      return;
+    }
+
+    if (action === "finish-table") { ui.pendingConfirm = { type: "finish", tableId: id }; render(); return; }
+    if (action === "cancel-table") { ui.pendingConfirm = { type: "cancel", tableId: id }; render(); return; }
+    if (action === "cancel-confirm") { ui.pendingConfirm = null; ui.confirmDeleteId = null; render(); return; }
+
+    if (action === "confirm-finish-table") {
+      ui.pendingConfirm = null;
+      var ns6 = cloneState();
+      var t6 = ns6.tables.find(function (x) { return x.id === id; });
+      var standings = computeStandings(t6.entrants, t6.matches);
+      var historyEntry = {
+        id: t6.id,
+        name: t6.name,
+        format: t6.format,
+        legs: t6.legs,
+        finishedAt: nowIso(),
+        players: t6.entrants,
+        finalStandings: standings.map(function (r) { return { name: r.name, rating: r.rating, wins: r.wins, losses: r.losses, played: r.played }; })
+      };
+      ns6.history = [historyEntry].concat(ns6.history).slice(0, HISTORY_LIMIT);
+      ns6.tables = ns6.tables.filter(function (x) { return x.id !== id; });
+      ui.activeTableId = null;
+      persist(ns6);
+      return;
+    }
+    if (action === "confirm-cancel-table") {
+      ui.pendingConfirm = null;
+      var ns7 = cloneState();
+      ns7.tables = ns7.tables.filter(function (x) { return x.id !== id; });
+      ui.activeTableId = null;
+      persist(ns7);
+      return;
+    }
+    if (action === "delete-history") { ui.confirmDeleteId = id; render(); return; }
+    if (action === "confirm-delete-history") {
+      ui.confirmDeleteId = null;
+      var ns8 = cloneState();
+      ns8.history = ns8.history.filter(function (h) { return h.id !== id; });
+      persist(ns8);
+      return;
+    }
+
+    /* ---- tournament bracket setup ---- */
+    if (action === "toggle-tournament-source") {
+      var idx3 = ui.tournamentSetup.selectedIds.indexOf(id);
+      if (idx3 === -1) ui.tournamentSetup.selectedIds.push(id);
+      else ui.tournamentSetup.selectedIds.splice(idx3, 1);
+      render();
+      return;
+    }
+    if (action === "tournament-advance-inc" || action === "tournament-advance-dec") {
+      var deltaT = action === "tournament-advance-inc" ? 1 : -1;
+      ui.tournamentSetup.advanceCount = Math.max(1, Math.min(8, ui.tournamentSetup.advanceCount + deltaT));
+      render();
+      return;
+    }
+    if (action === "set-tournament-mode") {
+      var newMode = target.getAttribute("data-mode") === "manual" ? "manual" : "auto";
+      ui.tournamentSetup.mode = newMode;
+      render();
+      return;
+    }
+    if (action === "set-manual-position") {
+      var key = target.getAttribute("data-key");
+      var val = target.value;
+      if (val) ui.tournamentSetup.manualPositions[key] = parseInt(val, 10);
+      else delete ui.tournamentSetup.manualPositions[key];
+      render();
+      return;
+    }
+    if (action === "create-tournament") {
+      var selEntries = state.history.filter(function (t) { return ui.tournamentSetup.selectedIds.indexOf(t.id) !== -1; });
+      if (selEntries.length < 2) return;
+      var seeds = buildBracketSeeds(selEntries, ui.tournamentSetup.advanceCount);
+      if (seeds.length < 2) { toast("進出できるチームが足りません"); return; }
+      var rounds;
+      if (ui.tournamentSetup.mode === "manual") {
+        var mSize = nextPow2(seeds.length);
+        var positions = ui.tournamentSetup.manualPositions;
+        var assigned = seeds.filter(function (s) { return !!positions[s.id]; });
+        var usedPos = {};
+        var dupFound = false;
+        assigned.forEach(function (s) {
+          var p = positions[s.id];
+          if (usedPos[p]) dupFound = true;
+          usedPos[p] = true;
+        });
+        if (assigned.length < seeds.length || dupFound) { toast("全チームに、重複しない配置番号を割り振ってください"); return; }
+        rounds = buildBracketRoundsFromSlots(buildManualSlots(seeds, positions, mSize));
+      } else {
+        rounds = buildBracketRounds(seeds);
+      }
+      var newBracket = {
+        id: uid("b"),
+        name: "決勝トーナメント",
+        advanceCount: ui.tournamentSetup.advanceCount,
+        sourceIds: selEntries.map(function (t) { return t.id; }),
+        sourceNames: selEntries.map(function (t) { return t.name; }),
+        legs: defaultLegs(3),
+        rounds: rounds,
+        createdAt: nowIso()
+      };
+      var nsT = cloneState();
+      nsT.bracket = newBracket;
+      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} };
+      persist(nsT);
+      return;
+    }
+
+    /* ---- tournament bracket matches ---- */
+    if (action === "open-bracket-match") {
+      ui.openMatchId = id;
+      ui.draftScores[id] = { a: 0, b: 0 };
+      render();
+      return;
+    }
+    if (action === "close-bracket-match") { ui.openMatchId = null; render(); return; }
+    if (action === "reopen-bracket-match") {
+      if (!state.bracket) return;
+      var nsR = cloneState();
+      var locR = findBracketMatchLocation(nsR.bracket.rounds, id);
+      if (!locR) return;
+      var mR = nsR.bracket.rounds[locR.round][locR.index];
+      ui.openMatchId = id;
+      ui.draftScores[id] = { a: mR.scoreA, b: mR.scoreB };
+      resetBracketFrom(nsR.bracket.rounds, locR.round, locR.index);
+      persist(nsR);
+      return;
+    }
+    if (action === "confirm-bracket-match") {
+      if (!state.bracket) return;
+      var dsB = ui.draftScores[id];
+      if (!dsB || dsB.a === dsB.b) return;
+      var nsB = cloneState();
+      var locB = findBracketMatchLocation(nsB.bracket.rounds, id);
+      if (!locB) return;
+      var mB = nsB.bracket.rounds[locB.round][locB.index];
+      mB.scoreA = dsB.a; mB.scoreB = dsB.b;
+      finishBracketMatch(nsB.bracket.rounds, mB, dsB.a > dsB.b ? "A" : "B");
+      ui.openMatchId = null;
+      persist(nsB);
+      return;
+    }
+
+    if (action === "finish-tournament") { ui.pendingConfirm = { type: "finish-tournament" }; render(); return; }
+    if (action === "cancel-tournament") { ui.pendingConfirm = { type: "cancel-tournament" }; render(); return; }
+    if (action === "confirm-finish-tournament") {
+      ui.pendingConfirm = null;
+      var nsF = cloneState();
+      var bF = nsF.bracket;
+      if (!bF) return;
+      var finalR = bF.rounds[bF.rounds.length - 1];
+      var champ = finalR[0];
+      var historyEntry2 = {
+        id: bF.id,
+        name: bF.name,
+        advanceCount: bF.advanceCount,
+        sourceNames: bF.sourceNames,
+        legs: bF.legs,
+        rounds: bF.rounds,
+        champion: champ && champ.status === "done" ? champ.winnerName : null,
+        finishedAt: nowIso()
+      };
+      nsF.bracketHistory = [historyEntry2].concat(nsF.bracketHistory).slice(0, HISTORY_LIMIT);
+      nsF.bracket = null;
+      persist(nsF);
+      return;
+    }
+    if (action === "confirm-cancel-tournament") {
+      ui.pendingConfirm = null;
+      var nsC = cloneState();
+      nsC.bracket = null;
+      persist(nsC);
+      return;
+    }
+  }
+
+  document.getElementById("app").addEventListener("click", function (e) {
+    var target = e.target.closest("[data-action]");
+    if (!target) return;
+    // A <select> already fires its data-action handler on "change" (below),
+    // with the actually-chosen value. Native <select> elements also emit a
+    // "click" event the instant they're clicked to OPEN the dropdown --
+    // before any option is picked -- so handling that here too would call
+    // handleAction() with the stale old value. For most select handlers
+    // that's harmless (they just re-store the same value), but any handler
+    // that calls render() would replace this DOM node while the browser's
+    // native option popup is still open, force-closing it before the user
+    // can choose anything (this is exactly what made the manual-placement
+    // dropdown snap shut instantly). So selects are excluded here entirely.
+    if (target.tagName === "SELECT") return;
+    handleAction(target.getAttribute("data-action"), target);
+  });
+  document.getElementById("app").addEventListener("change", function (e) {
+    var target = e.target.closest("[data-action]");
+    if (!target) return;
+    if (target.tagName === "SELECT" || target.getAttribute("data-action") === "set-handicap") handleAction(target.getAttribute("data-action"), target);
+  });
+  document.getElementById("app").addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target && e.target.id && e.target.id.indexOf("entrant-member-") === 0) {
+      e.preventDefault();
+      handleAction("add-entrant", e.target);
+    }
+    if (e.key === "Enter" && e.target && e.target.id === "password-input") {
+      e.preventDefault();
+      handleAction("submit-password", e.target);
+    }
+  });
+  // Mirror not-yet-submitted text into ui.newTable so a stray mobile reload
+  // (e.g. the on-screen keyboard opening) doesn't silently discard what the
+  // user was mid-way through typing. No render() here — that would steal
+  // focus/cursor position on every keystroke.
+  document.getElementById("app").addEventListener("input", function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== "INPUT") return;
+    if (t.id === "t-name") {
+      ui.newTable.name = t.value;
+      saveUiSnapshot();
+      return;
+    }
+    if (t.id === "entrant-rating") {
+      ui.newTable.ratingDraft = t.value;
+      saveUiSnapshot();
+      return;
+    }
+    var m = t.id && t.id.match(/^entrant-member-(\d+)$/);
+    if (m) {
+      var idx = parseInt(m[1], 10);
+      ui.newTable.entrantDraft = ui.newTable.entrantDraft || [];
+      ui.newTable.entrantDraft[idx] = t.value;
+      saveUiSnapshot();
+    }
+  });
+
+  /* ============ Init ============ */
+  render(); // paint immediately from the seed embedded at build time
+
+  if (dbReady) {
+    stateDocRef.onSnapshot(function (snap) {
+      if (!snap.exists) return;
+      var data = snap.data();
+      var parsed;
+      try {
+        parsed = JSON.parse(data.payload);
+      } catch (e) {
+        console.error("Bad payload in Firestore doc", e);
+        return;
+      }
+      // Firestore echoes this tab's own writes back through the same
+      // listener (with hasPendingWrites true until the server confirms);
+      // re-applying them is harmless (render() is idempotent), so no
+      // special-casing is needed here.
+      try {
+        applyingRemote = true;
+        state = migrate(parsed);
+        render();
+      } finally {
+        applyingRemote = false;
+      }
+    }, function (err) {
+      console.error("Firestore sync error", err);
+      toast("同期エラーが発生しました。電波状況をご確認ください");
+    });
+  }
+})();
+</script>
+</body>
+</html>
+
     --accent-strong: #8C6115;
     --accent-ink: #2C2004;
     --green: #3F6B44;
