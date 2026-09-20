@@ -1708,7 +1708,10 @@
     editLegs: null,         // draft legs array while editing an existing table's leg config
     pendingConfirm: null,   // null | {type:"finish"|"cancel", tableId} | {type:"finish-tournament"|"cancel-tournament"}
     confirmDeleteId: null,
-    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} }
+    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} },
+    showTableCountPicker: false, // "ロビン表をいくつ作りますか？" step, shown before the entrant form
+    tableCountDraft: 2,
+    tableWizard: null       // null | {remaining, total} while guiding through creating several robins in a row
   };
 
   function saveUiSnapshot() {
@@ -1719,6 +1722,9 @@
         tab: ui.tab,
         showNewTableForm: ui.showNewTableForm,
         newTable: ui.newTable,
+        showTableCountPicker: ui.showTableCountPicker,
+        tableCountDraft: ui.tableCountDraft,
+        tableWizard: ui.tableWizard,
         editingLegsTableId: ui.editingLegsTableId,
         editLegs: ui.editLegs,
         tournamentSetup: ui.tournamentSetup,
@@ -1746,6 +1752,12 @@
       if (typeof saved.activeTableId === "string" || saved.activeTableId === null) ui.activeTableId = saved.activeTableId;
       if (saved.tab === "matches" || saved.tab === "standings") ui.tab = saved.tab;
       if (typeof saved.showNewTableForm === "boolean") ui.showNewTableForm = saved.showNewTableForm;
+      if (typeof saved.showTableCountPicker === "boolean") ui.showTableCountPicker = saved.showTableCountPicker;
+      if (typeof saved.tableCountDraft === "number") ui.tableCountDraft = saved.tableCountDraft;
+      if (saved.tableWizard && typeof saved.tableWizard === "object" &&
+          typeof saved.tableWizard.remaining === "number" && typeof saved.tableWizard.total === "number") {
+        ui.tableWizard = { remaining: saved.tableWizard.remaining, total: saved.tableWizard.total };
+      }
       if (saved.newTable && typeof saved.newTable === "object") {
         ui.newTable = {
           format: saved.newTable.format || "singles",
@@ -2284,10 +2296,25 @@
     return "選手" + (idx + 1);
   }
 
+  function renderTableCountPicker() {
+    var n = ui.tableCountDraft || 2;
+    var html = '<div class="card"><h2 style="margin-top:0;">ロビン表をいくつ作りますか？</h2><div class="stack">';
+    html += '<div class="field"><label>ロビン表の数</label><div class="stepper"><button data-action="table-count-dec">−</button><output class="mono">' + n + '</output><button data-action="table-count-inc">+</button></div></div>';
+    html += '<p class="muted">決めた数だけ、順番に名前とRt.を入力していきます。あとから1つずつ増やすこともできます。</p>';
+    html += '<button class="btn btn-primary btn-block" data-action="start-table-wizard">この数で始める</button>';
+    html += '<button class="btn btn-ghost btn-block" data-action="cancel-table-count-picker">キャンセル</button>';
+    html += "</div></div>";
+    return html;
+  }
+
   function renderNewTableForm() {
     var nt = ui.newTable;
     var size = FORMAT_SIZE[nt.format];
     var html = '<div class="card"><h2 style="margin-top:0;">新しいロビン表をつくる</h2><div class="stack">';
+    if (ui.tableWizard) {
+      var wDone = ui.tableWizard.total - ui.tableWizard.remaining + 1;
+      html += '<p class="muted" style="margin-top:-8px;">ロビン表 ' + wDone + " / " + ui.tableWizard.total + " を作成中</p>";
+    }
     html += '<div class="field"><label for="t-name">ロビン表の名前</label><input type="text" id="t-name" placeholder="' + esc(defaultTableName()) + '" value="' + esc(nt.name) + '"></div>';
 
     html += '<div class="field"><label>対戦形式</label><div class="seg" role="group" aria-label="対戦形式">';
@@ -2358,14 +2385,16 @@
     if (editable) {
       if (ui.showNewTableForm) {
         html += renderNewTableForm();
+      } else if (ui.showTableCountPicker) {
+        html += renderTableCountPicker();
       } else {
-        html += '<button class="btn btn-primary btn-block" data-action="show-new-table">＋ ロビン表を増やす</button>';
+        html += '<button class="btn btn-primary btn-block" data-action="show-table-count-picker">＋ ロビン表を増やす</button>';
       }
     }
     if (state.tables.length === 0) {
       if (!editable) {
         html += '<div class="card"><div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。<br>幹事がロビン表を作成すると、ここに対戦表が表示されます。</p></div></div>';
-      } else if (!ui.showNewTableForm) {
+      } else if (!ui.showNewTableForm && !ui.showTableCountPicker) {
         html += '<div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。上のボタンから最初のロビン表を作りましょう。</p></div>';
       }
     } else {
@@ -2657,8 +2686,21 @@
     if (action === "open-table") { ui.activeTableId = id; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
 
     /* ---- new table setup ---- */
+    if (action === "show-table-count-picker") { ui.showTableCountPicker = true; ui.tableCountDraft = ui.tableCountDraft || 2; render(); return; }
+    if (action === "cancel-table-count-picker") { ui.showTableCountPicker = false; render(); return; }
+    if (action === "table-count-inc") { ui.tableCountDraft = Math.min(12, (ui.tableCountDraft || 2) + 1); render(); return; }
+    if (action === "table-count-dec") { ui.tableCountDraft = Math.max(1, (ui.tableCountDraft || 2) - 1); render(); return; }
+    if (action === "start-table-wizard") {
+      var wCount = ui.tableCountDraft || 1;
+      ui.tableWizard = { remaining: wCount, total: wCount };
+      ui.showTableCountPicker = false;
+      ui.showNewTableForm = true;
+      resetNewTableDraft();
+      render();
+      return;
+    }
     if (action === "show-new-table") { ui.showNewTableForm = true; resetNewTableDraft(); render(); return; }
-    if (action === "hide-new-table") { ui.showNewTableForm = false; render(); return; }
+    if (action === "hide-new-table") { ui.showNewTableForm = false; ui.tableWizard = null; render(); return; }
     if (action === "set-format") {
       var fmt = target.getAttribute("data-format");
       if (ui.newTable.entrants.length > 0 && fmt !== ui.newTable.format) {
@@ -2747,10 +2789,20 @@
       };
       var ns = cloneState();
       ns.tables.push(newTable);
-      ui.showNewTableForm = false;
       resetNewTableDraft();
-      ui.activeTableId = newTable.id;
-      ui.tab = "matches";
+      if (ui.tableWizard && ui.tableWizard.remaining > 1) {
+        // More robins planned in this guided setup — go straight into the
+        // next one's entrant form instead of landing on this table's
+        // match list, so names/Rt. can be entered one after another.
+        ui.tableWizard.remaining -= 1;
+        ui.showNewTableForm = true;
+        ui.activeTableId = null;
+      } else {
+        ui.tableWizard = null;
+        ui.showNewTableForm = false;
+        ui.activeTableId = newTable.id;
+        ui.tab = "matches";
+      }
       persist(ns);
       return;
     }
