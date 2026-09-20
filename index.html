@@ -3133,6 +3133,14 @@
     // can choose anything (this is exactly what made the manual-placement
     // dropdown snap shut instantly). So selects are excluded here entirely.
     if (target.tagName === "SELECT") return;
+    // Same problem for the handicap number inputs: they fire their
+    // data-action handler on "change" (below), once the user finishes
+    // typing and moves away. Without this guard, the mere click that
+    // focuses the box would also call handleAction() here immediately,
+    // with whatever value it happened to already hold (often empty) --
+    // triggering a render() that destroys and recreates the input the
+    // instant it's focused, before the user can type a single digit.
+    if (target.getAttribute("data-action") === "set-handicap") return;
     handleAction(target.getAttribute("data-action"), target);
   });
   document.getElementById("app").addEventListener("change", function (e) {
