@@ -2556,6 +2556,14 @@
   // everyone -- no republish, no "shared version" pinning, no manual
   // refresh needed.
   var applyingRemote = false; // true while a remote snapshot is being applied
+  // Tracks the payload string of our own most recent write, so the
+  // onSnapshot listener below can recognize when a snapshot is nothing but
+  // Firestore echoing our own write back to us and skip re-rendering for it.
+  // Without this, that echo (which arrives a moment after the local write,
+  // once the server confirms it) would trigger a second full-DOM render,
+  // which can wipe out text the user has since started typing into another
+  // field that hasn't been committed (blurred) yet.
+  var lastKnownPayload = null;
   function persist(newState) {
     var prevState = state;
     state = newState;
@@ -2576,12 +2584,18 @@
       toast("保存に失敗しました（データ形式エラー）");
       return;
     }
+    lastKnownPayload = payload;
     stateDocRef.set({ payload: payload, updatedAt: Date.now() }).then(function () {
       writeChecked = true;
       canWrite = true;
     }).catch(function (err) {
       writeChecked = true;
       console.error("Firestore write failed", err);
+      // The write never reached the server, so the payload we optimistically
+      // remembered above is wrong -- clear it so the next real snapshot from
+      // the server (reflecting the true, unrolled-back state) isn't mistaken
+      // for a self-echo and skipped.
+      lastKnownPayload = null;
       if (err && err.code === "permission-denied") {
         canWrite = false;
         state = prevState;
@@ -3169,6 +3183,16 @@
     stateDocRef.onSnapshot(function (snap) {
       if (!snap.exists) return;
       var data = snap.data();
+      // Firestore echoes this tab's own writes back through the same
+      // listener a moment later (once the server confirms them). If this
+      // snapshot's payload is exactly what we just wrote ourselves, it
+      // carries no new information -- skip it entirely rather than
+      // re-rendering. A full re-render here would replace every input's DOM
+      // node from `state`, which would silently erase any text the user has
+      // since started typing into another field (e.g. a handicap value)
+      // that hasn't been committed (blurred) yet, and would steal focus
+      // away from it.
+      if (data.payload === lastKnownPayload) { return; }
       var parsed;
       try {
         parsed = JSON.parse(data.payload);
@@ -3176,13 +3200,10 @@
         console.error("Bad payload in Firestore doc", e);
         return;
       }
-      // Firestore echoes this tab's own writes back through the same
-      // listener (with hasPendingWrites true until the server confirms);
-      // re-applying them is harmless (render() is idempotent), so no
-      // special-casing is needed here.
       try {
         applyingRemote = true;
         state = migrate(parsed);
+        lastKnownPayload = data.payload;
         render();
       } finally {
         applyingRemote = false;
