@@ -2894,6 +2894,15 @@
       if (!tH) return;
       ensureHandicap(tH);
       tH.handicap[hcMode][hcIdx] = hcVal;
+      // "1差" is the base handicap for a 1-rank gap. Entering it there
+      // auto-fills "2差"..."7差" as simple multiples (2x, 3x, ...) of it,
+      // so the user doesn't have to type all 7 by hand. Editing any of
+      // those fields directly afterward still overrides just that one.
+      if (hcIdx === 0 && hcVal !== null) {
+        for (var hcMulIdx = 1; hcMulIdx < tH.handicap[hcMode].length; hcMulIdx++) {
+          tH.handicap[hcMode][hcMulIdx] = hcVal * (hcMulIdx + 1);
+        }
+      }
       persist(nsH);
       return;
     }
