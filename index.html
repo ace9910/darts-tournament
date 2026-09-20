@@ -2206,12 +2206,12 @@
       html += '<div class="card"><div class="empty-state"><div class="icon">🏆</div><p>まだトーナメント表はありません。<br>幹事が対象のロビン表を選んで作成すると、ここに表示されます。</p></div></div>';
       return html;
     }
-    if (finished.length < 2) {
-      html += '<div class="card"><div class="empty-state"><div class="icon">🏆</div><p>トーナメント表を作るには、2つ以上のロビン表が終了している必要があります。</p></div></div>';
+    if (finished.length < 1) {
+      html += '<div class="card"><div class="empty-state"><div class="icon">🏆</div><p>トーナメント表を作るには、終了したロビン表が1つ以上必要です。</p></div></div>';
       return html;
     }
     html += '<div class="card"><h2 style="margin-top:0;">トーナメント表をつくる</h2><div class="stack">';
-    html += '<div class="field"><label>対象にするロビン表 (2つ以上選択)</label><div class="trn-source-list">';
+    html += '<div class="field"><label>対象にするロビン表 (1つ以上選択)</label><div class="trn-source-list">';
     finished.forEach(function (t) {
       var checked = ts.selectedIds.indexOf(t.id) !== -1;
       var d = new Date(t.finishedAt);
@@ -2236,10 +2236,13 @@
     html += "</div></div>";
 
     var selectedEntries = finished.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
-    var seeds = selectedEntries.length >= 2 ? buildBracketSeeds(selectedEntries, ts.advanceCount) : [];
+    var seeds = selectedEntries.length >= 1 ? buildBracketSeeds(selectedEntries, ts.advanceCount) : [];
     var totalSeeds = seeds.length;
-    html += '<p class="muted">' + (selectedEntries.length >= 2 ? "合計 " + totalSeeds + " チームが進出します" : "ロビン表を2つ以上選んでください") + "</p>";
-    var canCreate = selectedEntries.length >= 2 && totalSeeds >= 2;
+    var seedsMsg = selectedEntries.length < 1 ? "ロビン表を1つ以上選んでください"
+      : totalSeeds < 2 ? "進出できるチームが2チーム未満です。進出人数を増やすか、ロビン表を追加してください"
+      : "合計 " + totalSeeds + " チームが進出します";
+    html += '<p class="muted">' + seedsMsg + "</p>";
+    var canCreate = selectedEntries.length >= 1 && totalSeeds >= 2;
 
     if (canCreate) {
       html += '<div class="field"><label>トーナメント表への配置</label><div class="seg" role="group" aria-label="配置方法">';
@@ -3063,7 +3066,7 @@
     }
     if (action === "create-tournament") {
       var selEntries = state.history.filter(function (t) { return ui.tournamentSetup.selectedIds.indexOf(t.id) !== -1; });
-      if (selEntries.length < 2) return;
+      if (selEntries.length < 1) return;
       var seeds = buildBracketSeeds(selEntries, ui.tournamentSetup.advanceCount);
       if (seeds.length < 2) { toast("進出できるチームが足りません"); return; }
       var rounds;
