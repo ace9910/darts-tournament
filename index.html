@@ -1145,8 +1145,13 @@
   // The shareable, public URL — used for the "読み取ってリアルタイム閲覧" QR
   // code. Derived from the page's own address, since this is now a normal
   // standalone web page (not embedded in a viewer frame), so it always
-  // matches wherever this file is actually hosted.
-  var SHARE_URL = (window.location.origin + window.location.pathname).split(/[?#]/)[0];
+  // matches wherever this file is actually hosted. It carries a "share=1"
+  // marker so that anyone who arrives via this URL (QR scan or copied
+  // link) is locked to view-only — see isSharedEntry below — while the
+  // organizer's own plain address (no marker) keeps full access to the
+  // password-gated 操作する mode.
+  var SHARE_URL = (window.location.origin + window.location.pathname).split(/[?#]/)[0] + "?share=1";
+  var isSharedEntry = /(?:^|[?&])share=1(?:&|$)/.test(window.location.search);
   var QR_SVG = (function () {
     try {
       var qr = qrcode(0, "M");
@@ -1244,15 +1249,23 @@
   var EDIT_PASSWORD = "1234";
   var UNLOCK_KEY = "dartsnight_unlocked";
   var unlocked = false;     // has this device ever entered the correct password?
-  try {
-    unlocked = localStorage.getItem(UNLOCK_KEY) === "1";
-  } catch (e) {}
+  if (!isSharedEntry) {
+    try {
+      unlocked = localStorage.getItem(UNLOCK_KEY) === "1";
+    } catch (e) {}
+  }
   var viewMode = "view";    // "auto" | "view" (local convenience toggle); default to
                             // view until this device is unlocked with the password
-  try {
-    var storedMode = localStorage.getItem("dartsnight_viewmode");
-    if (unlocked && storedMode === "auto") viewMode = "auto";
-  } catch (e) {}
+  if (!isSharedEntry) {
+    try {
+      var storedMode = localStorage.getItem("dartsnight_viewmode");
+      if (unlocked && storedMode === "auto") viewMode = "auto";
+    } catch (e) {}
+  }
+  // A visitor who arrived via the shared/QR link (isSharedEntry) never sees
+  // 操作する at all, regardless of any unlock this browser did previously
+  // (e.g. the organizer's own device scanning its own QR code) — see
+  // render()'s role-toggle and handleAction's mode-auto/submit-password guards.
 
   function uid(prefix) {
     return prefix + "_" + Math.random().toString(36).slice(2, 9) + Date.now().toString(36).slice(-4);
@@ -2365,17 +2378,21 @@
   }
 
   function render() {
-    var readOnly = viewMode === "view" || !canWrite;
+    var readOnly = isSharedEntry || viewMode === "view" || !canWrite;
 
-    // role toggle
+    // role toggle — a shared/QR visitor never gets a 操作する entry point,
+    // so only the (permanently active) 閲覧のみ pill is shown.
     var rt = document.getElementById("role-toggle");
-    rt.innerHTML =
-      '<button data-action="mode-auto" aria-pressed="' + (viewMode === "auto") + '">操作する</button>' +
-      '<button data-action="mode-view" aria-pressed="' + (viewMode === "view") + '">閲覧のみ</button>';
+    rt.innerHTML = isSharedEntry
+      ? '<button data-action="mode-view" aria-pressed="true">閲覧のみ</button>'
+      : '<button data-action="mode-auto" aria-pressed="' + (viewMode === "auto") + '">操作する</button>' +
+        '<button data-action="mode-view" aria-pressed="' + (viewMode === "view") + '">閲覧のみ</button>';
 
     // readonly banner
     var banner = document.getElementById("readonly-banner");
-    if (ui.showPasswordPrompt) {
+    if (isSharedEntry) {
+      banner.innerHTML = '<div class="readonly-banner">👀 共有リンクからの閲覧です（閲覧専用）</div>' + qrPanelHtml();
+    } else if (ui.showPasswordPrompt) {
       banner.innerHTML =
         '<div class="readonly-banner password-banner">' +
           '<div class="password-label">🔒 操作するにはパスワードが必要です</div>' +
@@ -2515,6 +2532,7 @@
     var id = target.getAttribute("data-id");
 
     if (action === "mode-auto") {
+      if (isSharedEntry) return; // shared/QR visitors can never enter 操作する
       if (unlocked) {
         viewMode = "auto";
         try { localStorage.setItem("dartsnight_viewmode", "auto"); } catch (e) {}
@@ -2559,6 +2577,7 @@
     }
     if (action === "cancel-password") { ui.showPasswordPrompt = false; ui.passwordError = false; render(); return; }
     if (action === "submit-password") {
+      if (isSharedEntry) return; // shared/QR visitors can never unlock 操作する
       var pwEl = document.getElementById("password-input");
       var pwVal = (pwEl && pwEl.value) || "";
       if (pwVal === EDIT_PASSWORD) {
