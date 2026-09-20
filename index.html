@@ -1708,7 +1708,7 @@
     editLegs: null,         // draft legs array while editing an existing table's leg config
     pendingConfirm: null,   // null | {type:"finish"|"cancel", tableId} | {type:"finish-tournament"|"cancel-tournament"}
     confirmDeleteId: null,
-    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} },
+    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3) },
     showTableCountPicker: false, // "ロビン表をいくつ作りますか？" step, shown before the entrant form
     tableCountDraft: 2,
     tableWizard: null       // null | {remaining, total} while guiding through creating several robins in a row
@@ -1777,7 +1777,9 @@
           advanceCount: typeof saved.tournamentSetup.advanceCount === "number" ? saved.tournamentSetup.advanceCount : 2,
           selectedIds: Array.isArray(saved.tournamentSetup.selectedIds) ? saved.tournamentSetup.selectedIds : [],
           mode: saved.tournamentSetup.mode === "manual" ? "manual" : "auto",
-          manualPositions: saved.tournamentSetup.manualPositions && typeof saved.tournamentSetup.manualPositions === "object" ? saved.tournamentSetup.manualPositions : {}
+          manualPositions: saved.tournamentSetup.manualPositions && typeof saved.tournamentSetup.manualPositions === "object" ? saved.tournamentSetup.manualPositions : {},
+          legCount: saved.tournamentSetup.legCount || 3,
+          legs: Array.isArray(saved.tournamentSetup.legs) ? saved.tournamentSetup.legs : defaultLegs(3)
         };
       }
       if (typeof saved.openMatchId === "string") {
@@ -2221,6 +2223,18 @@
     });
     html += "</div></div>";
     html += '<div class="field"><label>各ロビンから上位何チーム進出</label><div class="stepper"><button data-action="tournament-advance-dec">−</button><output class="mono">' + ts.advanceCount + '位まで</output><button data-action="tournament-advance-inc">+</button></div></div>';
+
+    // The tournament (決勝トーナメント) keeps its own leg composition here,
+    // independent from whatever each source ロビン表 used for its own
+    // matches -- so a shorter/longer or differently-scored final round can
+    // be set up without touching the qualifying round-robins.
+    html += '<div class="field"><label>レグ数（決勝トーナメント）</label><div class="stepper"><button data-action="tournament-legcount-dec">−</button><output class="mono">' + ts.legCount + '</output><button data-action="tournament-legcount-inc">+</button></div></div>';
+    html += '<div class="field"><label>レグ構成（決勝トーナメント）</label><div class="leg-edit-grid">';
+    ts.legs.forEach(function (leg, i) {
+      html += '<div class="leg-row"><span class="leg-num">' + (i + 1) + "Leg目</span><select data-action=\"set-tournament-leg-type\" data-leg=\"" + i + '">' + legOptionsHtml(i, leg) + "</select></div>";
+    });
+    html += "</div></div>";
+
     var selectedEntries = finished.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
     var seeds = selectedEntries.length >= 2 ? buildBracketSeeds(selectedEntries, ts.advanceCount) : [];
     var totalSeeds = seeds.length;
@@ -3024,6 +3038,21 @@
       render();
       return;
     }
+    if (action === "tournament-legcount-inc" || action === "tournament-legcount-dec") {
+      var deltaTL = action === "tournament-legcount-inc" ? 2 : -2;
+      var newCountTL = Math.max(1, Math.min(9, ui.tournamentSetup.legCount + deltaTL));
+      ui.tournamentSetup.legCount = newCountTL;
+      var legsTL = ui.tournamentSetup.legs.slice(0, newCountTL);
+      while (legsTL.length < newCountTL) legsTL.push({ type: "01", target: 501 });
+      ui.tournamentSetup.legs = legsTL;
+      render();
+      return;
+    }
+    if (action === "set-tournament-leg-type") {
+      var idxTL = parseInt(target.getAttribute("data-leg"), 10);
+      ui.tournamentSetup.legs[idxTL] = parseLegValue(target.value);
+      return;
+    }
     if (action === "set-manual-position") {
       var key = target.getAttribute("data-key");
       var val = target.value;
@@ -3060,13 +3089,13 @@
         advanceCount: ui.tournamentSetup.advanceCount,
         sourceIds: selEntries.map(function (t) { return t.id; }),
         sourceNames: selEntries.map(function (t) { return t.name; }),
-        legs: defaultLegs(3),
+        legs: ui.tournamentSetup.legs.slice(),
         rounds: rounds,
         createdAt: nowIso()
       };
       var nsT = cloneState();
       nsT.bracket = newBracket;
-      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {} };
+      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3) };
       persist(nsT);
       return;
     }
