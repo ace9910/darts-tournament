@@ -2903,6 +2903,18 @@
           tH.handicap[hcMode][hcMulIdx] = hcVal * (hcMulIdx + 1);
         }
       }
+      // If "1差" is 0 (so straight multiples of it would leave everything
+      // else at 0 too), editing "2差" by hand instead defines the step from
+      // "1差" to "2差", and that same step continues on into "3差"..."7差"
+      // (e.g. 1差=0, 2差=1 -> 3差=2, 4差=3, 5差=4, 6差=5, 7差=6).
+      if (hcIdx === 1 && hcVal !== null) {
+        var hcBase = tH.handicap[hcMode][0];
+        if (hcBase === undefined || hcBase === null) hcBase = 0;
+        var hcStep = hcVal - hcBase;
+        for (var hcStepIdx = 2; hcStepIdx < tH.handicap[hcMode].length; hcStepIdx++) {
+          tH.handicap[hcMode][hcStepIdx] = hcBase + hcStepIdx * hcStep;
+        }
+      }
       persist(nsH);
       return;
     }
