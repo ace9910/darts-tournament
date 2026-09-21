@@ -1247,6 +1247,7 @@
       delete s.tournament;
     }
     s.tables.forEach(ensureHandicap);
+    if (s.bracket) ensureHandicap(s.bracket);
     return s;
   }
 
@@ -2173,6 +2174,7 @@
     html += renderBracketDiagram(b);
 
     html += legPanel(b, editable);
+    html += handicapPanel(b, editable);
 
     for (var r = 0; r < totalRounds; r++) {
       html += '<div class="trn-section"><div class="section-title" style="margin-top:0;">' + roundLabel(totalRounds, r) + "</div>";
@@ -2262,7 +2264,7 @@
           var p = ts.manualPositions[s.id] || "";
           var dup = p && used[p] > 1;
           html += '<div class="trn-manual-row' + (dup ? " dup" : "") + '">';
-          html += '<span class="trn-manual-name">' + esc(s.name) + '<span class="muted mono">' + esc(s.source.tableName) + " " + s.source.rank + "位</span></span>";
+          html += '<span class="trn-manual-name">' + esc(s.name) + ratingBadgeHtml(s.rating) + '<span class="muted mono">' + esc(s.source.tableName) + " " + s.source.rank + "位</span></span>";
           html += '<select class="trn-manual-select" data-action="set-manual-position" data-key="' + esc(s.id) + '"><option value="">-</option>';
           for (var n = 1; n <= size; n++) {
             html += '<option value="' + n + '"' + (String(p) === String(n) ? " selected" : "") + '>' + n + "</option>";
@@ -2900,14 +2902,17 @@
     }
     if (action === "draft-board") { ui.draftBoard[id] = parseInt(target.value, 10); return; }
     if (action === "set-handicap") {
-      if (!activeTable) return;
       var hcMode = target.getAttribute("data-mode");
       var hcIdx = parseInt(target.getAttribute("data-idx"), 10);
       var hcRaw = (target.value || "").trim();
       var hcVal = hcRaw === "" ? null : Number(hcRaw);
       if (hcVal !== null && !isFinite(hcVal)) hcVal = null;
       var nsH = cloneState();
-      var tH = nsH.tables.find(function (x) { return x.id === ui.activeTableId; });
+      // The same handicap panel/inputs are reused both for an individual
+      // ロビン table's detail view and for the 決勝トーナメント bracket
+      // (which has no "active table" of its own) -- target whichever one is
+      // actually open right now.
+      var tH = ui.activeTableId ? nsH.tables.find(function (x) { return x.id === ui.activeTableId; }) : nsH.bracket;
       if (!tH) return;
       ensureHandicap(tH);
       tH.handicap[hcMode][hcIdx] = hcVal;
@@ -3093,6 +3098,7 @@
         sourceIds: selEntries.map(function (t) { return t.id; }),
         sourceNames: selEntries.map(function (t) { return t.name; }),
         legs: ui.tournamentSetup.legs.slice(),
+        handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
         rounds: rounds,
         createdAt: nowIso()
       };
