@@ -1699,6 +1699,21 @@
     return Math.ceil(n / 2);
   }
 
+  // Match ids are unique across the whole room, so "which table is this
+  // match on" can always be answered by searching, rather than trusting
+  // whatever ui.activeTableId happens to hold -- important now that the
+  // ロビン表一覧 screen shows every table's 対戦表 at once, with no single
+  // "active" table at all.
+  function findTableByMatchId(s, matchId) {
+    for (var fi = 0; fi < s.tables.length; fi++) {
+      var tbl = s.tables[fi];
+      for (var fj = 0; fj < tbl.matches.length; fj++) {
+        if (tbl.matches[fj].id === matchId) return tbl;
+      }
+    }
+    return null;
+  }
+
   /* ============ Escaping ============ */
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -2923,15 +2938,16 @@
 
     var activeTable = ui.activeTableId ? state.tables.find(function (x) { return x.id === ui.activeTableId; }) : null;
 
-    // The ロビン表一覧 screen now shows every table's 対戦表 at once (not
-    // just one at a time), so a score button clicked there belongs to
-    // whichever table actually owns that match, not necessarily the one
-    // (if any) already set as ui.activeTableId. Resolve and switch to it
-    // so the rest of the scoring flow -- which is written around a single
-    // "active table" -- keeps working unchanged.
-    if ((action === "open-match" || action === "reopen-match") && (!activeTable || !activeTable.matches.some(function (m) { return m.id === id; }))) {
-      var ownerTable = state.tables.find(function (tb) { return tb.matches.some(function (m) { return m.id === id; }); });
-      if (ownerTable) { ui.activeTableId = ownerTable.id; activeTable = ownerTable; }
+    // The ロビン表一覧 screen shows every table's 対戦表 at once, with no
+    // single "active" table selected (ui.activeTableId stays null there on
+    // purpose, so the list keeps showing every table instead of jumping to
+    // a single-table view). So these five scoring actions always resolve
+    // their own table straight from the match id rather than from
+    // ui.activeTableId -- that way a score button clicked from the list
+    // stays on the list, and a score button clicked from the single-table
+    // view still works exactly as before.
+    if (["open-match", "reopen-match", "start-match", "revert-match", "confirm-match"].indexOf(action) !== -1) {
+      activeTable = findTableByMatchId(state, id);
     }
 
     if (action === "open-match") {
@@ -2952,7 +2968,7 @@
       ui.draftScores[id] = { a: mm.scoreA, b: mm.scoreB };
       ui.draftBoard[id] = mm.board;
       var ns2 = cloneState();
-      var t2 = ns2.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var t2 = ns2.tables.find(function (x) { return x.id === activeTable.id; });
       var m2 = t2.matches.find(function (m) { return m.id === id; });
       m2.status = "in_progress";
       persist(ns2);
@@ -3005,7 +3021,7 @@
     if (action === "start-match") {
       if (!activeTable) return;
       var ns3 = cloneState();
-      var t3 = ns3.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var t3 = ns3.tables.find(function (x) { return x.id === activeTable.id; });
       var m3 = t3.matches.find(function (m) { return m.id === id; });
       m3.status = "in_progress";
       m3.board = ui.draftBoard[id] || m3.board;
@@ -3015,7 +3031,7 @@
     if (action === "revert-match") {
       if (!activeTable) return;
       var ns4 = cloneState();
-      var t4 = ns4.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var t4 = ns4.tables.find(function (x) { return x.id === activeTable.id; });
       var m4 = t4.matches.find(function (m) { return m.id === id; });
       m4.status = "pending"; m4.scoreA = 0; m4.scoreB = 0; m4.winnerId = null;
       ui.openMatchId = null;
@@ -3037,7 +3053,7 @@
       if (!ds2 || ds2.a === ds2.b) return;
       if (Math.max(ds2.a, ds2.b) < requiredLegWins(activeTable.legs)) return;
       var ns5 = cloneState();
-      var t5 = ns5.tables.find(function (x) { return x.id === ui.activeTableId; });
+      var t5 = ns5.tables.find(function (x) { return x.id === activeTable.id; });
       var m5 = t5.matches.find(function (m) { return m.id === id; });
       m5.status = "done";
       m5.scoreA = ds2.a; m5.scoreB = ds2.b;
