@@ -282,6 +282,7 @@
     border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
     padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
   }
+  a.table-card { text-decoration: none; color: inherit; }
   .table-card .t-info h3 { margin: 0 0 5px; font-size: 17px; }
   .table-card .t-info .meta { font-size: 12px; color: var(--ink-faint); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .table-card .progress { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
@@ -357,7 +358,7 @@
   .match-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .score-row { display: flex; align-items: center; gap: 10px; }
   .score-row .name { font-size: 13.5px; width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .board-select {
+  .board-select, .table-switcher {
     border: 1px solid var(--line); background: var(--bg); color: var(--ink);
     border-radius: 7px; padding: 6px 8px; font-size: 13px;
   }
@@ -432,6 +433,8 @@
   }
   .ct-legend-item { white-space: nowrap; }
   .ct-legend-item b { color: var(--ink); font-family: "Space Mono", ui-monospace, monospace; }
+  .ct-legend-item.done { opacity: 0.45; }
+  .ct-legend-item.done b { color: var(--ink-faint); text-decoration: line-through; }
 
   /* ---------- Standings ---------- */
   .standings-table { width: 100%; border-collapse: collapse; }
@@ -871,6 +874,7 @@
     border: 1px solid var(--line); background: var(--surface); border-radius: 12px;
     padding: 14px 16px; display: flex; justify-content: space-between; align-items: center; gap: 12px;
   }
+  a.table-card { text-decoration: none; color: inherit; }
   .table-card .t-info h3 { margin: 0 0 5px; font-size: 17px; }
   .table-card .t-info .meta { font-size: 12px; color: var(--ink-faint); display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
   .table-card .progress { font-size: 12.5px; color: var(--ink-soft); margin-top: 4px; }
@@ -946,7 +950,7 @@
   .match-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .score-row { display: flex; align-items: center; gap: 10px; }
   .score-row .name { font-size: 13.5px; width: 84px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .board-select {
+  .board-select, .table-switcher {
     border: 1px solid var(--line); background: var(--bg); color: var(--ink);
     border-radius: 7px; padding: 6px 8px; font-size: 13px;
   }
@@ -1021,6 +1025,8 @@
   }
   .ct-legend-item { white-space: nowrap; }
   .ct-legend-item b { color: var(--ink); font-family: "Space Mono", ui-monospace, monospace; }
+  .ct-legend-item.done { opacity: 0.45; }
+  .ct-legend-item.done b { color: var(--ink-faint); text-decoration: line-through; }
 
   /* ---------- Standings ---------- */
   .standings-table { width: 100%; border-collapse: collapse; }
@@ -1260,6 +1266,19 @@
     }
     if (!Array.isArray(t.handicap["01"])) t.handicap["01"] = defaultHandicapArr();
     if (!Array.isArray(t.handicap.cricket)) t.handicap.cricket = defaultHandicapArr();
+  }
+
+  // The 決勝トーナメント starts from whichever ロビン表 the organizer set up
+  // first for it, carrying that table's handicap chart over as a starting
+  // point instead of a blank one (players already know their numbers from
+  // the qualifying round, and a house's handicap scale is usually the same
+  // scale all night regardless of which table it was dialed in on).
+  function inheritedHandicap(sourceEntries) {
+    var src = sourceEntries && sourceEntries[0] && sourceEntries[0].handicap;
+    return {
+      "01": src && Array.isArray(src["01"]) ? src["01"].slice() : defaultHandicapArr(),
+      cricket: src && Array.isArray(src.cricket) ? src.cricket.slice() : defaultHandicapArr()
+    };
   }
 
   // ============ Firebase (shared live state) ============
@@ -1850,7 +1869,7 @@
   function handicapCellHtml(t, mode, idx, val, editable) {
     var label = (idx + 1) + "差";
     if (editable) {
-      return '<div class="handicap-cell"><span class="handicap-cell-label">' + label + '</span><input type="number" inputmode="numeric" class="handicap-input" data-action="set-handicap" data-mode="' + mode + '" data-idx="' + idx + '" value="' + (val != null ? esc(val) : "") + '"></div>';
+      return '<div class="handicap-cell"><span class="handicap-cell-label">' + label + '</span><input type="number" inputmode="numeric" class="handicap-input" data-action="set-handicap" data-id="' + esc(t.id) + '" data-mode="' + mode + '" data-idx="' + idx + '" value="' + (val != null ? esc(val) : "") + '"></div>';
     }
     return '<div class="handicap-cell"><span class="handicap-cell-label">' + label + '</span><span class="handicap-value mono">' + (val != null ? esc(val) : "-") + "</span></div>";
   }
@@ -1985,7 +2004,8 @@
     html += '<div class="ct-legend"><span class="ct-legend-tag">試合順</span><div class="ct-legend-list">';
     html += ordered.map(function (m, i) {
       var ia = idIndex[m.playerAId], ib = idIndex[m.playerBId];
-      return '<span class="ct-legend-item">第' + (i + 1) + "試合：<b>" + (ia + 1) + "-" + (ib + 1) + "</b></span>";
+      var doneCls = m.status === "done" ? " done" : "";
+      return '<span class="ct-legend-item' + doneCls + '">第' + (i + 1) + "試合：<b>" + (ia + 1) + "-" + (ib + 1) + "</b></span>";
     }).join("");
     html += "</div></div>";
 
@@ -2417,18 +2437,27 @@
         html += '<div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。上のボタンから最初のロビン表を作りましょう。</p></div>';
       }
     } else {
-      html += '<div class="table-list" style="margin-top:16px;">';
-      state.tables.forEach(function (t) {
-        html += '<div class="table-card"><div class="t-info"><h3>' + esc(t.name) + '</h3><div class="meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>' + t.entrants.length + FORMAT_UNIT[t.format] + '</span><span>📋 ' + t.boardCount + 'ボード</span></div><div class="progress">' + tableProgress(t) + '</div></div><button class="btn btn-ghost btn-sm" data-action="open-table" data-id="' + t.id + '">開く</button></div>';
+      // Quick-jump strip: with several ロビン表 running at once, this lets
+      // the user scroll straight to one instead of hunting through the full
+      // list below (which now shows every table's content at once, not
+      // just a summary card, so it can get long).
+      if (state.tables.length > 1) {
+        html += '<div class="table-list" style="margin-top:16px;">';
+        state.tables.forEach(function (t) {
+          html += '<a class="table-card" href="#table-' + t.id + '"><div class="t-info"><h3>' + esc(t.name) + '</h3><div class="meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>' + t.entrants.length + FORMAT_UNIT[t.format] + '</span><span>📋 ' + t.boardCount + 'ボード</span></div><div class="progress">' + tableProgress(t) + '</div></div></a>';
+        });
+        html += "</div>";
+      }
+      state.tables.forEach(function (t, i) {
+        if (i > 0 || state.tables.length > 1) html += '<hr class="divider" style="margin-top:24px;">';
+        html += '<div class="card" id="table-' + t.id + '" style="margin-top:16px;">' + renderTableBody(t, editable) + "</div>";
       });
-      html += "</div>";
     }
     return html;
   }
 
-  function renderTableDetail(t, editable) {
-    var html = '<button class="btn btn-ghost btn-sm" data-action="back-to-list" style="margin-bottom:14px;">← ロビン表一覧に戻る</button>';
-    html += '<div class="t-head"><div>';
+  function renderTableBody(t, editable) {
+    var html = '<div class="t-head"><div>';
     html += "<h2>" + esc(t.name) + "</h2>";
     html += '<div class="t-meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>👥 ' + t.entrants.length + FORMAT_UNIT[t.format] + "</span><span>📋 " + t.boardCount + "ボード</span></div>";
     html += "</div></div>";
@@ -2461,6 +2490,23 @@
       }
       html += "</div>";
     }
+    return html;
+  }
+
+  function renderTableDetail(t, editable) {
+    var html = '<button class="btn btn-ghost btn-sm" data-action="back-to-list" style="margin-bottom:14px;">← ロビン表一覧に戻る</button>';
+    // With more than one ロビン表 in progress at once (e.g. running several
+    // boards' round-robins on the same night), jumping back to the list
+    // just to open a different one gets old fast -- this lets the current
+    // detail screen switch straight to another table.
+    if (state.tables.length > 1) {
+      html += '<select class="table-switcher" data-action="switch-table" style="margin-bottom:14px;margin-left:8px;" aria-label="ロビン表を切り替え">';
+      state.tables.forEach(function (ot) {
+        html += '<option value="' + ot.id + '"' + (ot.id === t.id ? " selected" : "") + '>' + esc(ot.name) + " (" + tableProgress(ot) + ")</option>";
+      });
+      html += "</select>";
+    }
+    html += renderTableBody(t, editable);
     return html;
   }
 
@@ -2717,6 +2763,7 @@
     if (action === "set-tab") { ui.tab = target.getAttribute("data-tab"); ui.openMatchId = null; render(); return; }
     if (action === "back-to-list") { ui.activeTableId = null; ui.openMatchId = null; render(); return; }
     if (action === "open-table") { ui.activeTableId = id; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
+    if (action === "switch-table") { ui.activeTableId = target.value; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
 
     /* ---- new table setup ---- */
     if (action === "show-table-count-picker") { ui.showTableCountPicker = true; ui.tableCountDraft = ui.tableCountDraft || 2; render(); return; }
@@ -2876,6 +2923,17 @@
 
     var activeTable = ui.activeTableId ? state.tables.find(function (x) { return x.id === ui.activeTableId; }) : null;
 
+    // The ロビン表一覧 screen now shows every table's 対戦表 at once (not
+    // just one at a time), so a score button clicked there belongs to
+    // whichever table actually owns that match, not necessarily the one
+    // (if any) already set as ui.activeTableId. Resolve and switch to it
+    // so the rest of the scoring flow -- which is written around a single
+    // "active table" -- keeps working unchanged.
+    if ((action === "open-match" || action === "reopen-match") && (!activeTable || !activeTable.matches.some(function (m) { return m.id === id; }))) {
+      var ownerTable = state.tables.find(function (tb) { return tb.matches.some(function (m) { return m.id === id; }); });
+      if (ownerTable) { ui.activeTableId = ownerTable.id; activeTable = ownerTable; }
+    }
+
     if (action === "open-match") {
       if (!activeTable) return;
       ui.openMatchId = id;
@@ -2908,11 +2966,15 @@
       var hcVal = hcRaw === "" ? null : Number(hcRaw);
       if (hcVal !== null && !isFinite(hcVal)) hcVal = null;
       var nsH = cloneState();
-      // The same handicap panel/inputs are reused both for an individual
-      // ロビン table's detail view and for the 決勝トーナメント bracket
-      // (which has no "active table" of its own) -- target whichever one is
-      // actually open right now.
-      var tH = ui.activeTableId ? nsH.tables.find(function (x) { return x.id === ui.activeTableId; }) : nsH.bracket;
+      // The same handicap panel/inputs are reused for an individual ロビン
+      // table, the 決勝トーナメント bracket, and -- now that ロビン表一覧
+      // shows every table's handicap panel at once instead of just the
+      // active one -- possibly several tables on screen at the same time.
+      // The input carries its own owner's id, so target that directly
+      // rather than assuming "whatever's currently active".
+      var hcId = target.getAttribute("data-id");
+      var tH = nsH.tables.find(function (x) { return x.id === hcId; });
+      if (!tH && nsH.bracket && nsH.bracket.id === hcId) tH = nsH.bracket;
       if (!tH) return;
       ensureHandicap(tH);
       tH.handicap[hcMode][hcIdx] = hcVal;
@@ -2994,11 +3056,13 @@
       var ns6 = cloneState();
       var t6 = ns6.tables.find(function (x) { return x.id === id; });
       var standings = computeStandings(t6.entrants, t6.matches);
+      ensureHandicap(t6);
       var historyEntry = {
         id: t6.id,
         name: t6.name,
         format: t6.format,
         legs: t6.legs,
+        handicap: t6.handicap,
         finishedAt: nowIso(),
         players: t6.entrants,
         finalStandings: standings.map(function (r) { return { name: r.name, rating: r.rating, wins: r.wins, losses: r.losses, played: r.played }; })
@@ -3098,7 +3162,7 @@
         sourceIds: selEntries.map(function (t) { return t.id; }),
         sourceNames: selEntries.map(function (t) { return t.name; }),
         legs: ui.tournamentSetup.legs.slice(),
-        handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
+        handicap: inheritedHandicap(selEntries),
         rounds: rounds,
         createdAt: nowIso()
       };
