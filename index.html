@@ -185,7 +185,11 @@
     display: flex; gap: 6px; margin-bottom: 18px;
     border-bottom: 1px solid var(--line);
   }
-  .top-nav .tab { font-size: 15px; }
+  .top-nav .tab { font-size: 15px; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .top-nav { gap: 0; overflow-x: auto; }
+    .top-nav .tab { font-size: 13.5px; margin-right: 12px; }
+  }
 
   /* ---------- Setup ---------- */
   .field { display: flex; flex-direction: column; gap: 6px; }
@@ -219,6 +223,36 @@
   .player-chip button:hover { color: var(--red); }
   .rt-badge { font-size: 11px; color: var(--ink-faint); font-weight: 700; }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .entry-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-row .entry-no { width: 22px; color: var(--ink-faint); font-size: 12px; text-align: right; }
+  .entry-row .entry-name { flex: 1; min-width: 0; word-break: break-all; }
+  .entry-row .entry-rt { width: 64px; padding: 6px 6px; font-size: 13px; text-align: right; }
+  .entry-row .entry-del {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 16px; line-height: 1; padding: 4px 6px;
+  }
+  .entry-row .entry-del:hover { color: var(--red); }
+  .status-chip {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 999px; background: var(--surface-2); color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  .status-chip.assigned { background: var(--accent); color: var(--accent-ink); }
+  .plan-group { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: var(--bg); }
+  .plan-group h4 { margin: 0 0 6px; font-size: 14px; }
+  .plan-group .plan-meta { font-weight: 400; color: var(--ink-faint); font-size: 12px; margin-left: 6px; }
+  .plan-group select { width: auto; max-width: 150px; padding: 5px 6px; font-size: 12.5px; }
+  .plan-pool { border-style: dashed; }
+  .entry-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .entry-pick button {
+    border: 1px dashed var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 999px; padding: 5px 11px; font-size: 13px;
+  }
   .stepper {
     display: inline-flex; align-items: center; gap: 0;
     border: 1px solid var(--line);
@@ -777,7 +811,11 @@
     display: flex; gap: 6px; margin-bottom: 18px;
     border-bottom: 1px solid var(--line);
   }
-  .top-nav .tab { font-size: 15px; }
+  .top-nav .tab { font-size: 15px; white-space: nowrap; }
+  @media (max-width: 480px) {
+    .top-nav { gap: 0; overflow-x: auto; }
+    .top-nav .tab { font-size: 13.5px; margin-right: 12px; }
+  }
 
   /* ---------- Setup ---------- */
   .field { display: flex; flex-direction: column; gap: 6px; }
@@ -811,6 +849,36 @@
   .player-chip button:hover { color: var(--red); }
   .rt-badge { font-size: 11px; color: var(--ink-faint); font-weight: 700; }
   .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .entry-row {
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 0; border-bottom: 1px solid var(--line);
+    font-size: 14px;
+  }
+  .entry-row:last-child { border-bottom: none; }
+  .entry-row .entry-no { width: 22px; color: var(--ink-faint); font-size: 12px; text-align: right; }
+  .entry-row .entry-name { flex: 1; min-width: 0; word-break: break-all; }
+  .entry-row .entry-rt { width: 64px; padding: 6px 6px; font-size: 13px; text-align: right; }
+  .entry-row .entry-del {
+    background: none; border: none; color: var(--ink-faint);
+    font-size: 16px; line-height: 1; padding: 4px 6px;
+  }
+  .entry-row .entry-del:hover { color: var(--red); }
+  .status-chip {
+    display: inline-block; font-size: 11px; font-weight: 700; padding: 2px 8px;
+    border-radius: 999px; background: var(--surface-2); color: var(--ink-faint);
+    white-space: nowrap;
+  }
+  .status-chip.assigned { background: var(--accent); color: var(--accent-ink); }
+  .plan-group { border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px; margin-top: 10px; background: var(--bg); }
+  .plan-group h4 { margin: 0 0 6px; font-size: 14px; }
+  .plan-group .plan-meta { font-weight: 400; color: var(--ink-faint); font-size: 12px; margin-left: 6px; }
+  .plan-group select { width: auto; max-width: 150px; padding: 5px 6px; font-size: 12.5px; }
+  .plan-pool { border-style: dashed; }
+  .entry-pick { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+  .entry-pick button {
+    border: 1px dashed var(--line); background: var(--bg); color: var(--ink);
+    border-radius: 999px; padding: 5px 11px; font-size: 13px;
+  }
   .stepper {
     display: inline-flex; align-items: center; gap: 0;
     border: 1px solid var(--line);
@@ -1234,6 +1302,9 @@
     if (!Array.isArray(s.tables)) s.tables = [];
     if (!Array.isArray(s.history)) s.history = [];
     if (!Array.isArray(s.bracketHistory)) s.bracketHistory = [];
+    // エントリーリスト: everyone registered for the event, before being
+    // dealt out into ロビン表.  [{id, name, members, rating, format}]
+    if (!Array.isArray(s.entries)) s.entries = [];
     if (typeof s.bracket === "undefined") s.bracket = null;
     if (s.tournament) {
       var legacy = s.tournament;
@@ -1746,7 +1817,9 @@
     tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3) },
     showTableCountPicker: false, // "ロビン表をいくつ作りますか？" step, shown before the entrant form
     tableCountDraft: 2,
-    tableWizard: null       // null | {remaining, total} while guiding through creating several robins in a row
+    tableWizard: null,      // null | {remaining, total} while guiding through creating several robins in a row
+    // エントリーリスト tab: registration form drafts + the ロビン振り分け plan
+    entry: { format: "singles", nameDraft: [], ratingDraft: "", showBulk: false, bulkText: "", planCount: 2, planMethod: "snake", plan: null, legCount: 3, legs: defaultLegs(3), boards: 1 }
   };
 
   function saveUiSnapshot() {
@@ -1763,6 +1836,7 @@
         editingLegsTableId: ui.editingLegsTableId,
         editLegs: ui.editLegs,
         tournamentSetup: ui.tournamentSetup,
+        entry: ui.entry,
         // The open match editor (対戦結果の入力) is exactly the screen a user
         // is mid-tap on when a silent reload hits — losing it not only drops
         // the score they were entering but also swaps in the finish/cancel
@@ -1783,7 +1857,7 @@
       if (!raw) return;
       var saved = JSON.parse(raw);
       if (!saved || typeof saved !== "object") return;
-      if (saved.topTab === "tables" || saved.topTab === "history" || saved.topTab === "tournament") ui.topTab = saved.topTab;
+      if (saved.topTab === "tables" || saved.topTab === "history" || saved.topTab === "tournament" || saved.topTab === "entry") ui.topTab = saved.topTab;
       if (typeof saved.activeTableId === "string" || saved.activeTableId === null) ui.activeTableId = saved.activeTableId;
       if (saved.tab === "matches" || saved.tab === "standings") ui.tab = saved.tab;
       if (typeof saved.showNewTableForm === "boolean") ui.showNewTableForm = saved.showNewTableForm;
@@ -1815,6 +1889,22 @@
           manualPositions: saved.tournamentSetup.manualPositions && typeof saved.tournamentSetup.manualPositions === "object" ? saved.tournamentSetup.manualPositions : {},
           legCount: saved.tournamentSetup.legCount || 3,
           legs: Array.isArray(saved.tournamentSetup.legs) ? saved.tournamentSetup.legs : defaultLegs(3)
+        };
+      }
+      if (saved.entry && typeof saved.entry === "object") {
+        var se = saved.entry;
+        ui.entry = {
+          format: FORMAT_SIZE[se.format] ? se.format : "singles",
+          nameDraft: Array.isArray(se.nameDraft) ? se.nameDraft : [],
+          ratingDraft: typeof se.ratingDraft === "string" ? se.ratingDraft : "",
+          showBulk: !!se.showBulk,
+          bulkText: typeof se.bulkText === "string" ? se.bulkText : "",
+          planCount: typeof se.planCount === "number" ? se.planCount : 2,
+          planMethod: se.planMethod === "random" ? "random" : "snake",
+          plan: Array.isArray(se.plan) ? se.plan : null,
+          legCount: se.legCount || 3,
+          legs: Array.isArray(se.legs) ? se.legs : defaultLegs(3),
+          boards: se.boards || 1
         };
       }
       if (typeof saved.openMatchId === "string") {
@@ -2343,6 +2433,196 @@
     return html;
   }
 
+  /* ============ エントリーリスト (registration + ロビン振り分け) ============ */
+  // state.entries is the pool of everyone registered for the event.  A
+  // ロビン表 built from it stamps each entrant with `entryId`, which is how
+  // the list knows who is already placed (and in which table) -- also for
+  // tables that have since been finished into 履歴.
+  function entryAssignments() {
+    var map = {};
+    state.tables.forEach(function (t) {
+      t.entrants.forEach(function (p) { if (p.entryId) map[p.entryId] = t.name; });
+    });
+    state.history.forEach(function (h) {
+      (h.players || []).forEach(function (p) { if (p.entryId) map[p.entryId] = h.name; });
+    });
+    return map;
+  }
+
+  function unassignedEntries(format) {
+    var map = entryAssignments();
+    return (state.entries || []).filter(function (e) { return e.format === format && !map[e.id]; });
+  }
+
+  // Deal `entries` out into `count` groups. "snake" sorts by Rt. and deals
+  // 1-2-3-3-2-1-1-2-3... so every group gets a similar spread of strong and
+  // weak players; "random" shuffles first and deals round-robin. Either way
+  // the group sizes differ by at most one.
+  function buildEntryPlan(entries, count, method) {
+    var list = entries.slice();
+    if (method === "random") {
+      for (var i = list.length - 1; i > 0; i--) {
+        var j = Math.floor(Math.random() * (i + 1));
+        var tmp = list[i]; list[i] = list[j]; list[j] = tmp;
+      }
+    } else {
+      list = list.map(function (e, idx) { return { e: e, idx: idx }; });
+      list.sort(function (a, b) {
+        var ra = a.e.rating != null ? a.e.rating : 0;
+        var rb = b.e.rating != null ? b.e.rating : 0;
+        return rb - ra || a.idx - b.idx;
+      });
+      list = list.map(function (x) { return x.e; });
+    }
+    var groups = [];
+    for (var g = 0; g < count; g++) groups.push([]);
+    list.forEach(function (e, k) {
+      var round = Math.floor(k / count);
+      var pos = k % count;
+      var gi = (method === "snake" && round % 2 === 1) ? count - 1 - pos : pos;
+      groups[gi].push(e.id);
+    });
+    return groups;
+  }
+
+  // The saved plan (ids) resolved against today's list: anyone deleted or
+  // placed elsewhere since is dropped, and anyone newly registered shows up
+  // in `rest` (未配置) rather than silently vanishing.
+  function currentEntryPlan() {
+    var pool = unassignedEntries(ui.entry.format);
+    var byId = {};
+    pool.forEach(function (e) { byId[e.id] = e; });
+    var seen = {};
+    var groups = (ui.entry.plan || []).map(function (g) {
+      return g.filter(function (eid) {
+        if (!byId[eid] || seen[eid]) return false;
+        seen[eid] = true;
+        return true;
+      }).map(function (eid) { return byId[eid]; });
+    });
+    var rest = pool.filter(function (e) { return !seen[e.id]; });
+    return { groups: groups, rest: rest, poolSize: pool.length };
+  }
+
+  function planLabels(groups) {
+    var n = 0;
+    return groups.map(function (g) {
+      if (g.length === 0) return "空のグループ";
+      return "ロビン" + letterName(state.tables.length + (n++));
+    });
+  }
+
+  function entryRowHtml(e, idx, assigned, showFormat) {
+    var h = '<div class="entry-row"><span class="entry-no mono">' + (idx + 1) + "</span>";
+    h += '<span class="entry-name">' + esc(e.name) + (showFormat ? ' <span class="format-badge">' + esc(FORMAT_LABEL[e.format]) + "</span>" : "") + "</span>";
+    h += '<input type="number" inputmode="numeric" class="entry-rt" data-action="entry-set-rating" data-id="' + esc(e.id) + '" value="' + esc(e.rating != null ? e.rating : "") + '" aria-label="Rt.">';
+    h += assigned ? '<span class="status-chip assigned">' + esc(assigned) + "</span>" : '<span class="status-chip">未割り振り</span>';
+    h += '<button class="entry-del" data-action="entry-remove" data-id="' + esc(e.id) + '" aria-label="削除">×</button></div>';
+    return h;
+  }
+
+  function renderEntryTab() {
+    var en = ui.entry;
+    var fmt = en.format;
+    var size = FORMAT_SIZE[fmt];
+    var assignedMap = entryAssignments();
+    var all = state.entries || [];
+    var html = "";
+
+    /* ---- registration ---- */
+    html += '<div class="card"><h2 style="margin-top:0;">エントリーを登録</h2><div class="stack">';
+    html += '<p class="muted" style="margin-top:-6px;">参加者を先に登録しておくと、下の「ロビンに振り分ける」で自動で組分けできます。</p>';
+    html += '<div class="field"><label>対戦形式</label><div class="seg" role="group" aria-label="対戦形式">';
+    FORMAT_ORDER.forEach(function (f) {
+      html += '<button data-action="entry-set-format" data-format="' + f + '" aria-pressed="' + (fmt === f) + '">' + FORMAT_LABEL[f] + "</button>";
+    });
+    html += "</div></div>";
+    html += '<div class="field"><label>エントリー追加</label><div class="add-row"><div class="member-inputs">';
+    for (var i = 0; i < size; i++) {
+      html += '<input type="text" id="entry-member-' + i + '" placeholder="' + esc(memberPlaceholder(fmt, i)) + '" value="' + esc((en.nameDraft && en.nameDraft[i]) || "") + '">';
+    }
+    html += "</div>";
+    html += '<input type="number" inputmode="numeric" id="entry-rating" class="rating-input" placeholder="' + (size === 1 ? "Rt.(必須)" : "合計Rt.(必須)") + '" value="' + esc(en.ratingDraft || "") + '">';
+    html += '<button class="btn btn-ghost" data-action="entry-add">追加</button></div></div>';
+
+    html += '<button class="btn btn-ghost btn-block" data-action="entry-bulk-toggle">' + (en.showBulk ? "▲ まとめて登録を閉じる" : "▼ まとめて登録（貼り付け）") + "</button>";
+    if (en.showBulk) {
+      html += '<div class="field"><label>1行に1エントリー「名前 Rt.」</label>';
+      html += '<textarea id="entry-bulk-text" rows="6" placeholder="' + (size === 1 ? "山田太郎 1500&#10;鈴木花子 1320" : "山田太郎・鈴木花子 2800") + '" style="width:100%;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:8px;padding:10px 12px;font-size:15px;font-family:inherit;">' + esc(en.bulkText || "") + "</textarea>";
+      html += '<p class="muted" style="font-size:12px;">名前とRt.は空白かカンマで区切ります' + (size > 1 ? "。複数人の名前は「・」でつなぎます" : "") + "。</p>";
+      html += '<button class="btn btn-primary btn-block" data-action="entry-bulk-add">この内容で登録する</button></div>';
+    }
+    html += "</div></div>";
+
+    /* ---- registered list ---- */
+    var unassignedTotal = all.filter(function (e) { return !assignedMap[e.id]; }).length;
+    html += '<div class="card" style="margin-top:16px;"><h2 style="margin-top:0;">登録済みエントリー</h2><p class="muted" style="margin-top:-6px;">' + all.length + "件 ・ 未割り振り " + unassignedTotal + "件</p>";
+    if (all.length === 0) {
+      html += '<div class="empty-state"><div class="icon">📝</div><p>まだエントリーがありません。<br>上のフォームから登録してください。</p></div>';
+    } else {
+      var mixed = all.some(function (e) { return e.format !== all[0].format; });
+      html += "<div>" + all.map(function (e, idx) { return entryRowHtml(e, idx, assignedMap[e.id], mixed); }).join("") + "</div>";
+    }
+    html += "</div>";
+
+    /* ---- planner ---- */
+    var cp = currentEntryPlan();
+    var unit = FORMAT_UNIT[fmt];
+    html += '<div class="card" style="margin-top:16px;"><h2 style="margin-top:0;">ロビンに振り分ける</h2><div class="stack">';
+    html += '<p class="muted" style="margin-top:-6px;">' + esc(FORMAT_LABEL[fmt]) + "の未割り振り " + cp.poolSize + unit + "を、いくつかのロビン表に分けます。</p>";
+    html += '<div class="field"><label>ロビン表の数</label><div class="stepper"><button data-action="entry-plan-count-dec">−</button><output class="mono">' + en.planCount + '</output><button data-action="entry-plan-count-inc">+</button></div></div>';
+    html += '<div class="field"><label>振り分け方</label><div class="seg" role="group" aria-label="振り分け方">';
+    html += '<button data-action="entry-plan-method" data-method="snake" aria-pressed="' + (en.planMethod === "snake") + '">Rt.で均等に</button>';
+    html += '<button data-action="entry-plan-method" data-method="random" aria-pressed="' + (en.planMethod === "random") + '">ランダム</button>';
+    html += "</div></div>";
+    html += '<button class="btn btn-primary btn-block" data-action="entry-make-plan"' + (cp.poolSize < 2 ? " disabled" : "") + ">" + (en.plan ? "振り分けをやり直す" : "振り分けを作る") + "</button>";
+    if (cp.poolSize < 2) html += '<p class="muted">未割り振りのエントリーが2' + unit + "以上になると振り分けできます。</p>";
+
+    if (en.plan) {
+      var labels = planLabels(cp.groups);
+      var optionHtml = function (selectedIdx) {
+        var o = "";
+        cp.groups.forEach(function (g, gi) {
+          o += '<option value="' + gi + '"' + (selectedIdx === gi ? " selected" : "") + ">" + esc(labels[gi]) + "</option>";
+        });
+        o += '<option value="-1"' + (selectedIdx === -1 ? " selected" : "") + ">未配置</option>";
+        return o;
+      };
+      var memberRow = function (e, selectedIdx) {
+        return '<div class="entry-row"><span class="entry-name">' + esc(e.name) + ratingBadgeHtml(e.rating) + '</span><select data-action="plan-move" data-id="' + esc(e.id) + '" aria-label="移動先">' + optionHtml(selectedIdx) + "</select></div>";
+      };
+      cp.groups.forEach(function (g, gi) {
+        var rated = g.filter(function (e) { return e.rating != null; });
+        var avg = rated.length === g.length && g.length > 0 ? Math.round(rated.reduce(function (s, e) { return s + e.rating; }, 0) / g.length) : null;
+        var matchCnt = g.length >= 2 ? g.length * (g.length - 1) / 2 : 0;
+        html += '<div class="plan-group"><h4>' + esc(labels[gi]) + '<span class="plan-meta">' + g.length + unit + (avg != null ? " ・ 平均Rt." + avg : "") + (matchCnt ? " ・ " + matchCnt + "試合" : "") + "</span></h4>";
+        if (g.length === 1) html += '<p class="muted" style="font-size:12px;margin:0 0 4px;color:var(--red);">1' + unit + "だけだと試合できません。誰かを移動してください。</p>";
+        html += g.map(function (e) { return memberRow(e, gi); }).join("") + "</div>";
+      });
+      if (cp.rest.length > 0) {
+        html += '<div class="plan-group plan-pool"><h4>未配置<span class="plan-meta">' + cp.rest.length + unit + " ・ 作成時は含まれません</span></h4>";
+        html += cp.rest.map(function (e) { return memberRow(e, -1); }).join("") + "</div>";
+      }
+      html += '<button class="btn btn-ghost btn-block" data-action="entry-add-group">＋ 空のグループを追加</button>';
+
+      html += '<div class="row-2">';
+      html += '<div class="field"><label>レグ数</label><div class="stepper"><button data-action="entry-legcount-dec">−</button><output class="mono">' + en.legCount + '</output><button data-action="entry-legcount-inc">+</button></div></div>';
+      html += '<div class="field"><label>使用ボード数</label><div class="stepper"><button data-action="entry-boards-dec">−</button><output class="mono">' + en.boards + '台</output><button data-action="entry-boards-inc">+</button></div></div>';
+      html += "</div>";
+      html += '<div class="field"><label>レグ構成（全ロビン共通・あとから個別に変更できます）</label><div class="leg-edit-grid">';
+      en.legs.forEach(function (leg, li) {
+        html += '<div class="leg-row"><span class="leg-num">' + (li + 1) + 'Leg目</span><select data-action="set-entry-leg-type" data-leg="' + li + '">' + legOptionsHtml(li, leg) + "</select></div>";
+      });
+      html += "</div></div>";
+
+      var makeCount = cp.groups.filter(function (g) { return g.length > 0; }).length;
+      var hasSingle = cp.groups.some(function (g) { return g.length === 1; });
+      html += '<button class="btn btn-primary btn-block" data-action="entry-create-tables"' + (makeCount === 0 || hasSingle ? " disabled" : "") + ">この振り分けでロビン表を作成 (" + makeCount + "個)</button>";
+    }
+    html += "</div></div>";
+    return html;
+  }
+
   /* ============ Rendering: new-table setup ============ */
   function memberPlaceholder(format, idx) {
     var size = FORMAT_SIZE[format];
@@ -2390,6 +2670,18 @@
       html += '<div class="player-list">' + nt.entrants.map(function (p) {
         return '<div class="player-chip">' + esc(p.name) + ratingBadgeHtml(p.rating) + ' <button data-action="remove-entrant" data-id="' + p.id + '" aria-label="削除">×</button></div>';
       }).join("") + "</div>";
+    }
+    // Quick-add from the エントリーリスト: anyone registered there (same
+    // format) who isn't placed in a table yet and isn't already in this draft.
+    var pickable = unassignedEntries(nt.format).filter(function (e) {
+      return !nt.entrants.some(function (p) { return p.entryId === e.id; });
+    });
+    if (pickable.length > 0) {
+      html += '<div class="muted" style="margin-top:10px;font-size:12.5px;">エントリーリストから追加</div><div class="entry-pick">';
+      pickable.forEach(function (e) {
+        html += '<button data-action="add-from-entry" data-id="' + esc(e.id) + '">＋ ' + esc(e.name) + ratingBadgeHtml(e.rating) + "</button>";
+      });
+      html += '<button data-action="add-all-from-entry" style="border-style:solid;font-weight:700;">未割り振りを全員追加</button></div>';
     }
     html += "</div>";
 
@@ -2575,8 +2867,8 @@
     // the shared link) only needs ロビン表 and トーナメント表.
     var visibleTabs = readOnly
       ? [["tables", "ロビン表一覧"], ["tournament", "トーナメント"]]
-      : [["tables", "ロビン表一覧"], ["history", "履歴"], ["tournament", "トーナメント"]];
-    if (readOnly && ui.topTab === "history") ui.topTab = "tables";
+      : [["entry", "エントリー"], ["tables", "ロビン表一覧"], ["history", "履歴"], ["tournament", "トーナメント"]];
+    if (readOnly && (ui.topTab === "history" || ui.topTab === "entry")) ui.topTab = "tables";
 
     html += '<div class="top-nav" role="tablist">';
     visibleTabs.forEach(function (tab) {
@@ -2584,7 +2876,9 @@
     });
     html += "</div>";
 
-    if (ui.topTab === "history" && !readOnly) {
+    if (ui.topTab === "entry" && !readOnly) {
+      html += renderEntryTab();
+    } else if (ui.topTab === "history" && !readOnly) {
       html += renderHistoryTab(!readOnly);
     } else if (ui.topTab === "tournament") {
       html += state.bracket ? renderBracketView(state.bracket, !readOnly) : renderTournamentSetup(!readOnly);
@@ -2779,6 +3073,183 @@
     if (action === "back-to-list") { ui.activeTableId = null; ui.openMatchId = null; render(); return; }
     if (action === "open-table") { ui.activeTableId = id; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
     if (action === "switch-table") { ui.activeTableId = target.value; ui.tab = "matches"; ui.openMatchId = null; render(); return; }
+
+    /* ---- エントリーリスト ---- */
+    if (action === "entry-set-format") {
+      ui.entry.format = target.getAttribute("data-format");
+      ui.entry.nameDraft = [];
+      ui.entry.ratingDraft = "";
+      ui.entry.plan = null;
+      render();
+      return;
+    }
+    if (action === "entry-add") {
+      var enSize = FORMAT_SIZE[ui.entry.format];
+      var enMembers = [];
+      for (var enI = 0; enI < enSize; enI++) {
+        var enEl = document.getElementById("entry-member-" + enI);
+        var enV = (enEl && enEl.value || "").trim();
+        if (!enV) { toast("名前をすべて入力してください"); return; }
+        enMembers.push(enV);
+      }
+      var enLabel = enMembers.join("・");
+      if ((state.entries || []).some(function (e) { return e.name === enLabel && e.format === ui.entry.format; })) { toast("同じエントリーがあります"); return; }
+      var enRtEl = document.getElementById("entry-rating");
+      var enRtRaw = (enRtEl && enRtEl.value || "").trim();
+      if (enRtRaw === "") { toast(enSize === 1 ? "Rt.を入力してください" : "合計Rt.を入力してください"); return; }
+      var enRt = Number(enRtRaw);
+      if (!isFinite(enRt)) { toast("Rt.には数値を入力してください"); return; }
+      var nsEn = cloneState();
+      nsEn.entries.push({ id: uid("e"), name: enLabel, members: enMembers, rating: enRt, format: ui.entry.format });
+      ui.entry.nameDraft = [];
+      ui.entry.ratingDraft = "";
+      persist(nsEn);
+      var enFirst = document.getElementById("entry-member-0");
+      if (enFirst) enFirst.focus();
+      return;
+    }
+    if (action === "entry-remove") {
+      var nsEnR = cloneState();
+      nsEnR.entries = nsEnR.entries.filter(function (e) { return e.id !== id; });
+      persist(nsEnR);
+      return;
+    }
+    if (action === "entry-set-rating") {
+      var enRaw = (target.value || "").trim();
+      var enNew = Number(enRaw);
+      if (enRaw === "" || !isFinite(enNew)) { toast("Rt.には数値を入力してください"); render(); return; }
+      var nsEnS = cloneState();
+      var enTarget = nsEnS.entries.find(function (e) { return e.id === id; });
+      if (!enTarget) return;
+      enTarget.rating = enNew;
+      persist(nsEnS);
+      return;
+    }
+    if (action === "entry-bulk-toggle") { ui.entry.showBulk = !ui.entry.showBulk; render(); return; }
+    if (action === "entry-bulk-add") {
+      var enTa = document.getElementById("entry-bulk-text");
+      var enText = (enTa && enTa.value) || "";
+      var enFmt = ui.entry.format;
+      var enSz = FORMAT_SIZE[enFmt];
+      var nsEnB = cloneState();
+      var enAdded = 0, enDup = 0, enBad = [];
+      enText.split(/\r?\n/).forEach(function (rawLine) {
+        var line = rawLine.trim();
+        if (!line) return;
+        var mt = line.match(/^(.+?)[\s,，、]+(-?\d+(?:\.\d+)?)$/);
+        if (!mt) { enBad.push(rawLine); return; }
+        var mem = mt[1].split(/[・･]/).map(function (x) { return x.trim(); }).filter(function (x) { return x; });
+        if (mem.length !== enSz) { enBad.push(rawLine); return; }
+        var nm = mem.join("・");
+        if (nsEnB.entries.some(function (e) { return e.name === nm && e.format === enFmt; })) { enDup++; return; }
+        nsEnB.entries.push({ id: uid("e"), name: nm, members: mem, rating: Number(mt[2]), format: enFmt });
+        enAdded++;
+      });
+      if (enAdded === 0 && enDup === 0 && enBad.length === 0) { toast("登録する内容を入力してください"); return; }
+      ui.entry.bulkText = enBad.join("\n");
+      if (enBad.length === 0) ui.entry.showBulk = false;
+      var enMsg = enAdded + "件を登録しました";
+      if (enDup) enMsg += "（重複" + enDup + "件はスキップ）";
+      if (enBad.length) enMsg += "。読み取れなかった" + enBad.length + "行は残してあります";
+      persist(nsEnB);
+      toast(enMsg);
+      return;
+    }
+    if (action === "entry-plan-count-inc") { ui.entry.planCount = Math.min(12, ui.entry.planCount + 1); render(); return; }
+    if (action === "entry-plan-count-dec") { ui.entry.planCount = Math.max(1, ui.entry.planCount - 1); render(); return; }
+    if (action === "entry-plan-method") { ui.entry.planMethod = target.getAttribute("data-method") === "random" ? "random" : "snake"; render(); return; }
+    if (action === "entry-make-plan") {
+      var enPool = unassignedEntries(ui.entry.format);
+      if (enPool.length < 2) { toast("未割り振りのエントリーが2つ以上必要です"); return; }
+      var enMax = Math.max(1, Math.floor(enPool.length / 2));
+      if (ui.entry.planCount > enMax) {
+        ui.entry.planCount = enMax;
+        toast("1つのロビンに2人以上入るよう、ロビン表の数を" + enMax + "個にしました");
+      }
+      ui.entry.plan = buildEntryPlan(enPool, ui.entry.planCount, ui.entry.planMethod);
+      render();
+      return;
+    }
+    if (action === "plan-move") {
+      var enCp = currentEntryPlan();
+      var enDest = parseInt(target.value, 10);
+      var enGroupsIds = enCp.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
+      enGroupsIds = enGroupsIds.map(function (g) { return g.filter(function (eid) { return eid !== id; }); });
+      if (enDest >= 0 && enGroupsIds[enDest]) enGroupsIds[enDest].push(id);
+      // A group everyone has moved out of disappears (but a group that was
+      // just added empty, and is the move's destination, is kept above).
+      ui.entry.plan = enGroupsIds.filter(function (g) { return g.length > 0; });
+      render();
+      return;
+    }
+    if (action === "entry-add-group") {
+      var enCp2 = currentEntryPlan();
+      var enIds2 = enCp2.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
+      if (enIds2.length > 0 && enIds2[enIds2.length - 1].length === 0) { toast("空のグループがすでにあります"); return; }
+      enIds2.push([]);
+      ui.entry.plan = enIds2;
+      render();
+      return;
+    }
+    if (action === "entry-legcount-inc" || action === "entry-legcount-dec") {
+      var enDelta = action === "entry-legcount-inc" ? 2 : -2;
+      var enNewCount = Math.max(1, Math.min(9, ui.entry.legCount + enDelta));
+      ui.entry.legCount = enNewCount;
+      var enLegs = ui.entry.legs.slice(0, enNewCount);
+      while (enLegs.length < enNewCount) enLegs.push({ type: "01", target: 501 });
+      ui.entry.legs = enLegs;
+      render();
+      return;
+    }
+    if (action === "set-entry-leg-type") {
+      ui.entry.legs[parseInt(target.getAttribute("data-leg"), 10)] = parseLegValue(target.value);
+      saveUiSnapshot();
+      return;
+    }
+    if (action === "entry-boards-inc") { ui.entry.boards = Math.min(8, ui.entry.boards + 1); render(); return; }
+    if (action === "entry-boards-dec") { ui.entry.boards = Math.max(1, ui.entry.boards - 1); render(); return; }
+    if (action === "entry-create-tables") {
+      var enPlanNow = currentEntryPlan();
+      var enMake = enPlanNow.groups.filter(function (g) { return g.length > 0; });
+      if (enMake.length === 0) return;
+      if (enMake.some(function (g) { return g.length < 2; })) { toast("1人だけのロビンがあります。2人以上になるよう調整してください"); return; }
+      var nsEnC = cloneState();
+      var enBoards = ui.entry.boards;
+      enMake.forEach(function (g) {
+        var enEntrants = g.map(function (e) {
+          return { id: uid("p"), name: e.name, members: e.members.slice(), rating: e.rating, entryId: e.id };
+        });
+        nsEnC.tables.push({
+          id: uid("t"),
+          name: "ロビン" + letterName(nsEnC.tables.length),
+          format: ui.entry.format,
+          boardCount: enBoards,
+          legs: JSON.parse(JSON.stringify(ui.entry.legs)),
+          entrants: enEntrants,
+          matches: generateSchedule(enEntrants, enBoards),
+          handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
+          createdAt: nowIso()
+        });
+      });
+      ui.entry.plan = null;
+      ui.topTab = "tables";
+      ui.activeTableId = null;
+      persist(nsEnC);
+      toast(enMake.length + "つのロビン表を作成しました");
+      return;
+    }
+    // Quick-add from the エントリーリスト while filling in a single new ロビン表.
+    if (action === "add-from-entry" || action === "add-all-from-entry") {
+      var enSrcList = unassignedEntries(ui.newTable.format).filter(function (e) {
+        return !ui.newTable.entrants.some(function (p) { return p.entryId === e.id; });
+      });
+      if (action === "add-from-entry") enSrcList = enSrcList.filter(function (e) { return e.id === id; });
+      enSrcList.forEach(function (e) {
+        ui.newTable.entrants.push({ id: uid("p"), name: e.name, members: e.members.slice(), rating: e.rating, entryId: e.id });
+      });
+      render();
+      return;
+    }
 
     /* ---- new table setup ---- */
     if (action === "show-table-count-picker") { ui.showTableCountPicker = true; ui.tableCountDraft = ui.tableCountDraft || 2; render(); return; }
@@ -3258,6 +3729,13 @@
     }
   }
 
+  // Number inputs that save on "change" (when the user finishes typing and
+  // moves away), not on the click that merely focuses them -- see the long
+  // comment in the click listener below for why a click-time save breaks them.
+  function isChangeOnlyInput(el) {
+    var a = el.getAttribute("data-action");
+    return a === "set-handicap" || a === "entry-set-rating";
+  }
   document.getElementById("app").addEventListener("click", function (e) {
     var target = e.target.closest("[data-action]");
     if (!target) return;
@@ -3279,18 +3757,22 @@
     // with whatever value it happened to already hold (often empty) --
     // triggering a render() that destroys and recreates the input the
     // instant it's focused, before the user can type a single digit.
-    if (target.getAttribute("data-action") === "set-handicap") return;
+    if (isChangeOnlyInput(target)) return;
     handleAction(target.getAttribute("data-action"), target);
   });
   document.getElementById("app").addEventListener("change", function (e) {
     var target = e.target.closest("[data-action]");
     if (!target) return;
-    if (target.tagName === "SELECT" || target.getAttribute("data-action") === "set-handicap") handleAction(target.getAttribute("data-action"), target);
+    if (target.tagName === "SELECT" || isChangeOnlyInput(target)) handleAction(target.getAttribute("data-action"), target);
   });
   document.getElementById("app").addEventListener("keydown", function (e) {
     if (e.key === "Enter" && e.target && e.target.id && e.target.id.indexOf("entrant-member-") === 0) {
       e.preventDefault();
       handleAction("add-entrant", e.target);
+    }
+    if (e.key === "Enter" && e.target && e.target.id && e.target.id.indexOf("entry-member-") === 0) {
+      e.preventDefault();
+      handleAction("entry-add", e.target);
     }
     if (e.key === "Enter" && e.target && e.target.id === "password-input") {
       e.preventDefault();
@@ -3303,7 +3785,16 @@
   // focus/cursor position on every keystroke.
   document.getElementById("app").addEventListener("input", function (e) {
     var t = e.target;
+    if (t && t.id === "entry-bulk-text") { ui.entry.bulkText = t.value; saveUiSnapshot(); return; }
     if (!t || t.tagName !== "INPUT") return;
+    if (t.id === "entry-rating") { ui.entry.ratingDraft = t.value; saveUiSnapshot(); return; }
+    var em = t.id && t.id.match(/^entry-member-(\d+)$/);
+    if (em) {
+      ui.entry.nameDraft = ui.entry.nameDraft || [];
+      ui.entry.nameDraft[parseInt(em[1], 10)] = t.value;
+      saveUiSnapshot();
+      return;
+    }
     if (t.id === "t-name") {
       ui.newTable.name = t.value;
       saveUiSnapshot();
