@@ -1900,7 +1900,7 @@
           showBulk: !!se.showBulk,
           bulkText: typeof se.bulkText === "string" ? se.bulkText : "",
           planCount: typeof se.planCount === "number" ? se.planCount : 2,
-          planMethod: se.planMethod === "random" ? "random" : "snake",
+          planMethod: (se.planMethod === "random" || se.planMethod === "manual") ? se.planMethod : "snake",
           plan: Array.isArray(se.plan) ? se.plan : null,
           legCount: se.legCount || 3,
           legs: Array.isArray(se.legs) ? se.legs : defaultLegs(3),
@@ -2504,12 +2504,11 @@
     return { groups: groups, rest: rest, poolSize: pool.length };
   }
 
+  // Labels are positional (1st group = the next free letter, 2nd = the one
+  // after...) and the tables are created with exactly these names, so what
+  // the organizer picks in the dropdowns ("〇〇はロビンA") is what they get.
   function planLabels(groups) {
-    var n = 0;
-    return groups.map(function (g) {
-      if (g.length === 0) return "空のグループ";
-      return "ロビン" + letterName(state.tables.length + (n++));
-    });
+    return freeTableNames(groups.length);
   }
 
   function entryRowHtml(e, idx, assigned, showFormat) {
@@ -2574,8 +2573,11 @@
     html += '<div class="field"><label>振り分け方</label><div class="seg" role="group" aria-label="振り分け方">';
     html += '<button data-action="entry-plan-method" data-method="snake" aria-pressed="' + (en.planMethod === "snake") + '">Rt.で均等に</button>';
     html += '<button data-action="entry-plan-method" data-method="random" aria-pressed="' + (en.planMethod === "random") + '">ランダム</button>';
+    html += '<button data-action="entry-plan-method" data-method="manual" aria-pressed="' + (en.planMethod === "manual") + '">自分で決める</button>';
     html += "</div></div>";
-    html += '<button class="btn btn-primary btn-block" data-action="entry-make-plan"' + (cp.poolSize < 2 ? " disabled" : "") + ">" + (en.plan ? "振り分けをやり直す" : "振り分けを作る") + "</button>";
+    var makeLabel = en.planMethod === "manual" ? (en.plan ? "ロビン枠を作り直す（全員を未配置に戻す）" : "ロビン枠を作る") : (en.plan ? "振り分けをやり直す" : "振り分けを作る");
+    html += '<button class="btn btn-primary btn-block" data-action="entry-make-plan"' + (cp.poolSize < 2 ? " disabled" : "") + ">" + makeLabel + "</button>";
+    if (en.planMethod === "manual" && !en.plan) html += '<p class="muted" style="font-size:12.5px;">ロビン枠を作ったあと、未配置の人ごとに「ロビンA」「ロビンB」…を選んで入れていきます。</p>';
     if (cp.poolSize < 2) html += '<p class="muted">未割り振りのエントリーが2' + unit + "以上になると振り分けできます。</p>";
 
     if (en.plan) {
@@ -2597,13 +2599,15 @@
         var matchCnt = g.length >= 2 ? g.length * (g.length - 1) / 2 : 0;
         html += '<div class="plan-group"><h4>' + esc(labels[gi]) + '<span class="plan-meta">' + g.length + unit + (avg != null ? " ・ 平均Rt." + avg : "") + (matchCnt ? " ・ " + matchCnt + "試合" : "") + "</span></h4>";
         if (g.length === 1) html += '<p class="muted" style="font-size:12px;margin:0 0 4px;color:var(--red);">1' + unit + "だけだと試合できません。誰かを移動してください。</p>";
-        html += g.map(function (e) { return memberRow(e, gi); }).join("") + "</div>";
+        if (g.length === 0) html += '<p class="muted" style="font-size:12.5px;margin:0;">まだ誰もいません。下の未配置の人のプルダウンで「' + esc(labels[gi]) + "」を選ぶと入ります。（空のままなら作成されません）</p>";
+        html += g.map(function (e) { return memberRow(e, gi); }).join("");
+        html += '<div style="text-align:right;margin-top:6px;"><button class="btn btn-ghost btn-sm" data-action="entry-remove-group" data-idx="' + gi + '">この枠を削除</button></div></div>';
       });
       if (cp.rest.length > 0) {
         html += '<div class="plan-group plan-pool"><h4>未配置<span class="plan-meta">' + cp.rest.length + unit + " ・ 作成時は含まれません</span></h4>";
         html += cp.rest.map(function (e) { return memberRow(e, -1); }).join("") + "</div>";
       }
-      html += '<button class="btn btn-ghost btn-block" data-action="entry-add-group">＋ 空のグループを追加</button>';
+      html += '<button class="btn btn-ghost btn-block" data-action="entry-add-group">＋ ロビン枠を追加</button>';
 
       html += '<div class="row-2">';
       html += '<div class="field"><label>レグ数</label><div class="stepper"><button data-action="entry-legcount-dec">−</button><output class="mono">' + en.legCount + '</output><button data-action="entry-legcount-inc">+</button></div></div>';
@@ -2717,8 +2721,20 @@
     return s;
   }
 
+  // The next `count` "ロビンX" names not already used by a running table.
+  function freeTableNames(count) {
+    var used = {};
+    state.tables.forEach(function (t) { used[t.name] = true; });
+    var names = [];
+    for (var n = 0; names.length < count && n < 1000; n++) {
+      var nm = "ロビン" + letterName(n);
+      if (!used[nm]) names.push(nm);
+    }
+    return names;
+  }
+
   function defaultTableName() {
-    return "ロビン" + letterName(state.tables.length);
+    return freeTableNames(1)[0];
   }
 
   function tableProgress(t) {
@@ -3157,10 +3173,24 @@
     }
     if (action === "entry-plan-count-inc") { ui.entry.planCount = Math.min(12, ui.entry.planCount + 1); render(); return; }
     if (action === "entry-plan-count-dec") { ui.entry.planCount = Math.max(1, ui.entry.planCount - 1); render(); return; }
-    if (action === "entry-plan-method") { ui.entry.planMethod = target.getAttribute("data-method") === "random" ? "random" : "snake"; render(); return; }
+    if (action === "entry-plan-method") {
+      var enM = target.getAttribute("data-method");
+      ui.entry.planMethod = (enM === "random" || enM === "manual") ? enM : "snake";
+      render();
+      return;
+    }
     if (action === "entry-make-plan") {
       var enPool = unassignedEntries(ui.entry.format);
       if (enPool.length < 2) { toast("未割り振りのエントリーが2つ以上必要です"); return; }
+      if (ui.entry.planMethod === "manual") {
+        // 自分で決める: just open N empty ロビン枠 with everyone in 未配置;
+        // the organizer then picks each person's ロビン from the dropdown.
+        var enFrames = [];
+        for (var enF = 0; enF < ui.entry.planCount; enF++) enFrames.push([]);
+        ui.entry.plan = enFrames;
+        render();
+        return;
+      }
       var enMax = Math.max(1, Math.floor(enPool.length / 2));
       if (ui.entry.planCount > enMax) {
         ui.entry.planCount = enMax;
@@ -3176,18 +3206,27 @@
       var enGroupsIds = enCp.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
       enGroupsIds = enGroupsIds.map(function (g) { return g.filter(function (eid) { return eid !== id; }); });
       if (enDest >= 0 && enGroupsIds[enDest]) enGroupsIds[enDest].push(id);
-      // A group everyone has moved out of disappears (but a group that was
-      // just added empty, and is the move's destination, is kept above).
-      ui.entry.plan = enGroupsIds.filter(function (g) { return g.length > 0; });
+      // Empty groups are kept (so ロビンB stays ロビンB while it's being
+      // filled); one can be removed explicitly with its 削除 button.
+      ui.entry.plan = enGroupsIds;
       render();
       return;
     }
     if (action === "entry-add-group") {
       var enCp2 = currentEntryPlan();
       var enIds2 = enCp2.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
-      if (enIds2.length > 0 && enIds2[enIds2.length - 1].length === 0) { toast("空のグループがすでにあります"); return; }
+      if (enIds2.length > 0 && enIds2[enIds2.length - 1].length === 0) { toast("空のロビン枠がすでにあります"); return; }
       enIds2.push([]);
       ui.entry.plan = enIds2;
+      render();
+      return;
+    }
+    if (action === "entry-remove-group") {
+      var enCp3 = currentEntryPlan();
+      var enIdx3 = parseInt(target.getAttribute("data-idx"), 10);
+      var enIds3 = enCp3.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
+      enIds3.splice(enIdx3, 1); // its members (if any) fall back to 未配置
+      ui.entry.plan = enIds3;
       render();
       return;
     }
@@ -3215,13 +3254,15 @@
       if (enMake.some(function (g) { return g.length < 2; })) { toast("1人だけのロビンがあります。2人以上になるよう調整してください"); return; }
       var nsEnC = cloneState();
       var enBoards = ui.entry.boards;
-      enMake.forEach(function (g) {
+      var enNames = planLabels(enPlanNow.groups);
+      enPlanNow.groups.forEach(function (g, gi) {
+        if (g.length === 0) return;
         var enEntrants = g.map(function (e) {
           return { id: uid("p"), name: e.name, members: e.members.slice(), rating: e.rating, entryId: e.id };
         });
         nsEnC.tables.push({
           id: uid("t"),
-          name: "ロビン" + letterName(nsEnC.tables.length),
+          name: enNames[gi],
           format: ui.entry.format,
           boardCount: enBoards,
           legs: JSON.parse(JSON.stringify(ui.entry.legs)),
