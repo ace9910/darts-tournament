@@ -609,6 +609,7 @@
           <h1>トーナメント</h1>
           <p>ラウンドロビン式ハウストーナメント盤</p>
           <button type="button" class="new-room-link" id="new-room-link" data-action="new-tournament-room">＋ 新しい大会を始める</button>
+          <span id="app-version" style="display:block;font-size:10px;color:var(--ink-faint);margin-top:2px;"></span>
         </div>
       </div>
       <div class="role-toggle" id="role-toggle" role="group" aria-label="表示モード"></div>
@@ -1241,6 +1242,28 @@
   // uses the "新しい大会を始める" link (see NEW_ROOM_ACTION below), which
   // mints a fresh id and navigates there.
   var ROOM_PARAM = "t";
+  // Bump on every release. On load the page compares this with the copy on
+  // the server (bypassing the cache) and, if the server has a newer one,
+  // reopens itself once with a fresh URL so phones don't keep showing an
+  // old cached version after an update.
+  var APP_VERSION = "2026-10-26b";
+  (function checkForNewerVersion() {
+    try {
+      if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
+      fetch(location.pathname + "?vcheck=" + Date.now(), { cache: "no-store" }).then(function (r) {
+        return r.ok ? r.text() : "";
+      }).then(function (txt) {
+        var mt = txt && txt.match(/var APP_VERSION = "([^"]+)"/);
+        if (!mt || mt[1] === APP_VERSION) return;
+        var key = "dartsnight_reloaded_for";
+        if (sessionStorage.getItem(key) === mt[1]) return; // tried once already
+        sessionStorage.setItem(key, mt[1]);
+        var u = new URL(location.href);
+        u.searchParams.set("v", mt[1]);
+        location.replace(u.toString());
+      }).catch(function () {});
+    } catch (e) {}
+  })();
   var BASE_URL = (window.location.origin + window.location.pathname).split(/[?#]/)[0];
   var urlParams = new URLSearchParams(window.location.search);
   var roomId = urlParams.get(ROOM_PARAM) || "tournament";
@@ -1257,6 +1280,8 @@
   // Starting a brand-new independent tournament is an organizer-level
   // action, so the static header link for it is hidden for anyone who
   // arrived via a shared/QR link.
+  var verEl = document.getElementById("app-version");
+  if (verEl) verEl.textContent = "版 " + APP_VERSION;
   if (isSharedEntry) {
     var newRoomLinkEl = document.getElementById("new-room-link");
     if (newRoomLinkEl) newRoomLinkEl.hidden = true;
@@ -2511,13 +2536,17 @@
     html += '<p class="muted">' + seedsMsg + "</p>";
     var canCreate = selectedEntries.length >= 1 && totalSeeds >= 2;
 
-    if (canCreate) {
+    // 配置 and シード are always shown (not only once 2+ teams are picked),
+    // so the organizer can see and set them up front.
+    {
       html += '<div class="field"><label>トーナメント表への配置</label><div class="seg" role="group" aria-label="配置方法">';
       html += '<button data-action="set-tournament-mode" data-mode="auto" aria-pressed="' + (ts.mode !== "manual") + '">自動配置</button>';
       html += '<button data-action="set-tournament-mode" data-mode="manual" aria-pressed="' + (ts.mode === "manual") + '">手動配置</button>';
       html += "</div></div>";
 
-      if (ts.mode === "manual") {
+      if (ts.mode === "manual" && totalSeeds < 2) {
+        html += '<p class="muted">進出チームが2チーム以上決まると、配置番号を割り振れます。</p>';
+      } else if (ts.mode === "manual") {
         var size = nextPow2(totalSeeds);
         var used = {};
         seeds.forEach(function (s) {
@@ -2551,7 +2580,9 @@
         html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
         html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
         html += "</div></div>";
-        if (seedOn) {
+        if (totalSeeds < 2) {
+          html += '<p class="muted">' + (seedOn ? "進出チームが2チーム以上決まると、シードの数を選べます。" : "全チームを抽選（ランダム）で配置します。") + "</p>";
+        } else if (seedOn) {
           html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
           var byeSeeds = Math.min(kNow, byeNow);
           var seedNote = "成績上位" + kNow + "チームがシードです。シード同士は早い回戦で当たらないよう離して配置します。";
