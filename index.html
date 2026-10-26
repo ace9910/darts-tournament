@@ -1614,6 +1614,52 @@
     return rounds;
   }
 
+  // シードあり/なし. `seeds` is in 成績順 (rank tier order). The top k are
+  // シード: placed in the standard seed positions so they can't meet each
+  // other early, and the 1回戦 byes (不戦勝 / 2回戦から) go to them first,
+  // strongest first. Everyone else is drawn at random into the remaining
+  // spots (any leftover byes land on random non-seeded teams, never two
+  // byes against each other). k = 0 is a full random draw; k = all teams is
+  // exactly the old 成績順に対極 placement.
+  function seededSlots(seeds, k) {
+    var total = seeds.length;
+    var size = nextPow2(total);
+    var order = seedOrder(size);
+    var slotOfSeed = {};
+    order.forEach(function (sn, i) { slotOfSeed[sn] = i; });
+    k = Math.max(0, Math.min(k, total));
+    var OPEN = {};
+    var slots = [];
+    for (var i = 0; i < size; i++) slots.push(OPEN);
+    for (var sn = 1; sn <= k; sn++) slots[slotOfSeed[sn]] = seeds[sn - 1];
+    var byes = size - total;
+    for (var sb = 1; sb <= k && byes > 0; sb++) { slots[slotOfSeed[sb] ^ 1] = null; byes--; }
+    var freePairs = [];
+    for (var pi = 0; pi < size; pi += 2) {
+      if (slots[pi] === OPEN && slots[pi + 1] === OPEN) freePairs.push(pi);
+    }
+    shuffleInPlace(freePairs);
+    for (var bi = 0; bi < byes; bi++) slots[freePairs[bi] + (Math.random() < 0.5 ? 0 : 1)] = null;
+    var rest = shuffleInPlace(seeds.slice(k));
+    for (var fi = 0; fi < size; fi++) if (slots[fi] === OPEN) slots[fi] = rest.shift() || null;
+    return slots;
+  }
+
+  function shuffleInPlace(arr) {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t;
+    }
+    return arr;
+  }
+
+  // Seeds actually used for a given setup (null seedCount = 全チーム).
+  function effectiveSeedCount(ts, total) {
+    if (ts.seedMode === "off") return 0;
+    var k = ts.seedCount == null ? total : ts.seedCount;
+    return Math.max(1, Math.min(k, total));
+  }
+
   function slotsFromSeedOrder(seeds) {
     // Standard tournament seeding: seed 1 and seed 2 land at opposite ends
     // of the bracket and can only meet in the final, seed 3/4 next, etc.
@@ -1783,7 +1829,9 @@
 
   /* ============ Leg helpers ============ */
   function legLabel(leg) {
-    return leg.type === "cricket" ? "クリケット" : String(leg.target);
+    if (leg.type === "cricket") return "クリケット";
+    if (leg.type === "choice") return "Choice";
+    return String(leg.target);
   }
   function legSummary(legs) {
     return legs.map(function (leg, i) { return (i + 1) + "Leg " + legLabel(leg); }).join(" ・ ");
@@ -1797,10 +1845,16 @@
     if (index > 0) {
       html += '<option value="cricket"' + (selected.type === "cricket" ? " selected" : "") + ">クリケット</option>";
     }
+    // Choice (the players pick the game) is offered from the 3rd leg on --
+    // typically the deciding leg.
+    if (index >= 2) {
+      html += '<option value="choice"' + (selected.type === "choice" ? " selected" : "") + ">Choice</option>";
+    }
     return html;
   }
   function parseLegValue(v) {
     if (v === "cricket") return { type: "cricket" };
+    if (v === "choice") return { type: "choice" };
     var target = parseInt(v.split("-")[1], 10);
     return { type: "01", target: target };
   }
@@ -1858,7 +1912,7 @@
     editLegs: null,         // draft legs array while editing an existing table's leg config
     pendingConfirm: null,   // null | {type:"finish"|"cancel", tableId} | {type:"finish-tournament"|"cancel-tournament"}
     confirmDeleteId: null,
-    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [] },
+    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [], seedMode: "on", seedCount: null },
     showTableCountPicker: false, // "ロビン表をいくつ作りますか？" step, shown before the entrant form
     tableCountDraft: 2,
     tableWizard: null,      // null | {remaining, total} while guiding through creating several robins in a row
@@ -1934,7 +1988,9 @@
           legCount: saved.tournamentSetup.legCount || 3,
           legs: Array.isArray(saved.tournamentSetup.legs) ? saved.tournamentSetup.legs : defaultLegs(3),
           pickMode: saved.tournamentSetup.pickMode === "pick" ? "pick" : "top",
-          pickedIds: Array.isArray(saved.tournamentSetup.pickedIds) ? saved.tournamentSetup.pickedIds : []
+          pickedIds: Array.isArray(saved.tournamentSetup.pickedIds) ? saved.tournamentSetup.pickedIds : [],
+          seedMode: saved.tournamentSetup.seedMode === "off" ? "off" : "on",
+          seedCount: typeof saved.tournamentSetup.seedCount === "number" ? saved.tournamentSetup.seedCount : null
         };
       }
       if (saved.entry && typeof saved.entry === "object") {
@@ -2457,7 +2513,7 @@
 
     if (canCreate) {
       html += '<div class="field"><label>トーナメント表への配置</label><div class="seg" role="group" aria-label="配置方法">';
-      html += '<button data-action="set-tournament-mode" data-mode="auto" aria-pressed="' + (ts.mode !== "manual") + '">自動配置（成績順に対極）</button>';
+      html += '<button data-action="set-tournament-mode" data-mode="auto" aria-pressed="' + (ts.mode !== "manual") + '">自動配置</button>';
       html += '<button data-action="set-tournament-mode" data-mode="manual" aria-pressed="' + (ts.mode === "manual") + '">手動配置</button>';
       html += "</div></div>";
 
@@ -2488,7 +2544,24 @@
         else html += '<p class="muted">配置完了です</p>';
         canCreate = canCreate && assignedCount === totalSeeds && !hasDup;
       } else {
-        html += '<p class="muted">成績上位のチームが対極に配置され、決勝まで当たらないよう自動で組まれます</p>';
+        var seedOn = ts.seedMode !== "off";
+        var kNow = effectiveSeedCount(ts, totalSeeds);
+        var byeNow = nextPow2(totalSeeds) - totalSeeds;
+        html += '<div class="field"><label>シード</label><div class="seg" role="group" aria-label="シード">';
+        html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
+        html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
+        html += "</div></div>";
+        if (seedOn) {
+          html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
+          var byeSeeds = Math.min(kNow, byeNow);
+          var seedNote = "成績上位" + kNow + "チームがシードです。シード同士は早い回戦で当たらないよう離して配置します。";
+          if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝（2回戦から）です。";
+          if (kNow < totalSeeds) seedNote += "残りの" + (totalSeeds - kNow) + "チームは抽選（ランダム）で配置します。";
+          if (byeNow > byeSeeds) seedNote += "不戦勝の残り" + (byeNow - byeSeeds) + "枠も抽選です。";
+          html += '<p class="muted">' + seedNote + "</p>";
+        } else {
+          html += '<p class="muted">全' + totalSeeds + "チームを抽選（ランダム）で配置します" + (byeNow > 0 ? "。不戦勝の" + byeNow + "枠も抽選です" : "") + "。</p>";
+        }
       }
     }
 
@@ -3759,6 +3832,21 @@
       render();
       return;
     }
+    if (action === "set-seed-mode") {
+      ui.tournamentSetup.seedMode = target.getAttribute("data-mode") === "off" ? "off" : "on";
+      render();
+      return;
+    }
+    if (action === "seed-count-inc" || action === "seed-count-dec") {
+      var tsS = ui.tournamentSetup;
+      var srcS = state.history.filter(function (t) { return tsS.selectedIds.indexOf(t.id) !== -1; });
+      var totS = tournamentSeeds(srcS, tsS).length;
+      var curS = effectiveSeedCount(tsS, totS);
+      var nxtS = Math.max(1, Math.min(totS, curS + (action === "seed-count-inc" ? 1 : -1)));
+      tsS.seedCount = nxtS >= totS ? null : nxtS;
+      render();
+      return;
+    }
     if (action === "set-tournament-pick-mode") {
       var tsP = ui.tournamentSetup;
       tsP.pickMode = target.getAttribute("data-mode") === "pick" ? "pick" : "top";
@@ -3834,7 +3922,7 @@
         if (assigned.length < seeds.length || dupFound) { toast("全チームに、重複しない配置番号を割り振ってください"); return; }
         rounds = buildBracketRoundsFromSlots(buildManualSlots(seeds, positions, mSize));
       } else {
-        rounds = buildBracketRounds(seeds);
+        rounds = buildBracketRoundsFromSlots(seededSlots(seeds, effectiveSeedCount(ui.tournamentSetup, seeds.length)));
       }
       var newBracket = {
         id: uid("b"),
@@ -3850,7 +3938,7 @@
       };
       var nsT = cloneState();
       nsT.bracket = newBracket;
-      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [] };
+      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [], seedMode: "on", seedCount: null };
       persist(nsT);
       return;
     }
