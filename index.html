@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-10-26b";
+  var APP_VERSION = "2026-10-26d";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -1350,6 +1350,17 @@
     }
     s.tables.forEach(ensureHandicap);
     if (s.bracket) ensureHandicap(s.bracket);
+    // ハンデ is shared by every ロビン in the room (one chart, shown once at
+    // the top of ロビン表一覧). Older rooms kept one per table: adopt the
+    // first table's chart that actually has numbers in it.
+    if (!s.handicap || typeof s.handicap !== "object") {
+      var hasNums = function (h) {
+        return h && ["01", "cricket"].some(function (k) { return Array.isArray(h[k]) && h[k].some(function (v) { return v != null; }); });
+      };
+      var srcH = s.tables.concat(s.history).find(function (t) { return hasNums(t.handicap); });
+      s.handicap = srcH ? JSON.parse(JSON.stringify(srcH.handicap)) : null;
+    }
+    ensureHandicap(s);
     if (s.bracket && Array.isArray(s.bracket.rounds) && s.bracket.rounds.length) settleBracketByes(s.bracket.rounds);
     return s;
   }
@@ -2117,6 +2128,12 @@
     html += "</div></div>";
     html += "</div>";
     return html;
+  }
+
+  // The one ハンデ chart shared by all ロビン (id "__room__").
+  function commonHandicapCard(editable) {
+    var holder = { id: "__room__", handicap: state.handicap };
+    return '<div class="card" style="margin-top:16px;"><h3 style="margin:0;font-size:15px;">ハンデ（全ロビン共通）</h3>' + handicapPanel(holder, editable) + "</div>";
   }
 
   function statusLabel(s) {
@@ -2950,6 +2967,7 @@
   }
 
   function tableProgress(t) {
+    if (t.finished) return "終了済み";
     var done = t.matches.filter(function (m) { return m.status === "done"; }).length;
     return done + "/" + t.matches.length + "試合終了";
   }
@@ -2965,6 +2983,7 @@
         html += '<button class="btn btn-primary btn-block" data-action="show-table-count-picker">＋ ロビン表を増やす</button>';
       }
     }
+    if (state.tables.length > 0) html += commonHandicapCard(editable);
     if (state.tables.length === 0) {
       if (!editable) {
         html += '<div class="card"><div class="empty-state"><div class="icon">🎯</div><p>まだロビン表がありません。<br>幹事がロビン表を作成すると、ここに対戦表が表示されます。</p></div></div>';
@@ -2992,13 +3011,15 @@
   }
 
   function renderTableBody(t, editable) {
+    var organizer = editable;
+    // A finished ロビン表 stays visible but locked (no score/leg edits).
+    if (t.finished) editable = false;
     var html = '<div class="t-head"><div>';
-    html += "<h2>" + esc(t.name) + "</h2>";
+    html += "<h2>" + esc(t.name) + (t.finished ? ' <span class="status-chip assigned" style="vertical-align:middle;">終了</span>' : "") + "</h2>";
     html += '<div class="t-meta"><span class="format-badge">' + esc(FORMAT_LABEL[t.format]) + '</span><span>👥 ' + t.entrants.length + FORMAT_UNIT[t.format] + "</span><span>📋 " + t.boardCount + "ボード</span></div>";
     html += "</div></div>";
 
     html += legPanel(t, editable);
-    html += handicapPanel(t, editable);
 
     html += '<div class="tabs" role="tablist">';
     [["matches", "対戦表"], ["standings", "順位表"]].forEach(function (tab) {
@@ -3024,6 +3045,16 @@
         html += '<button class="btn btn-danger btn-block" data-action="cancel-table" data-id="' + t.id + '">このロビン表を中止する</button>';
       }
       html += "</div>";
+    } else if (organizer && t.finished) {
+      html += '<hr class="divider"><div class="stack">';
+      var pcH = ui.pendingConfirm;
+      if (pcH && pcH.tableId === t.id && pcH.type === "hide") {
+        html += '<div class="card" style="padding:14px 16px;"><p style="margin-top:0;">このロビン表を一覧から外しますか?記録（履歴）とトーナメントの対象には残ります。</p><div class="match-actions"><button class="btn btn-primary btn-sm" data-action="confirm-hide-table" data-id="' + t.id + '">はい、外す</button><button class="btn btn-ghost btn-sm" data-action="cancel-confirm">やめる</button></div></div>';
+      } else {
+        html += '<p class="muted">このロビン表は終了して記録済みです。トーナメントの対象に選べます。</p>';
+        html += '<button class="btn btn-ghost btn-block" data-action="hide-table" data-id="' + t.id + '">一覧から外す</button>';
+      }
+      html += "</div>";
     }
     return html;
   }
@@ -3041,7 +3072,8 @@
       });
       html += "</select>";
     }
-    html += renderTableBody(t, editable);
+    html += commonHandicapCard(editable);
+    html += '<div style="margin-top:16px;">' + renderTableBody(t, editable) + "</div>";
     return html;
   }
 
@@ -3505,7 +3537,7 @@
           legs: JSON.parse(JSON.stringify(ui.entry.legs)),
           entrants: enEntrants,
           matches: generateSchedule(enEntrants, enBoards),
-          handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
+          handicap: JSON.parse(JSON.stringify(state.handicap)),
           createdAt: nowIso()
         });
       });
@@ -3628,7 +3660,7 @@
         legs: nt.legs.slice(),
         entrants: nt.entrants.slice(),
         matches: matches,
-        handicap: { "01": defaultHandicapArr(), cricket: defaultHandicapArr() },
+        handicap: JSON.parse(JSON.stringify(state.handicap)),
         createdAt: nowIso()
       };
       var ns = cloneState();
@@ -3738,7 +3770,7 @@
       // The input carries its own owner's id, so target that directly
       // rather than assuming "whatever's currently active".
       var hcId = target.getAttribute("data-id");
-      var tH = nsH.tables.find(function (x) { return x.id === hcId; });
+      var tH = hcId === "__room__" ? nsH : nsH.tables.find(function (x) { return x.id === hcId; });
       if (!tH && nsH.bracket && nsH.bracket.id === hcId) tH = nsH.bracket;
       if (!tH) return;
       ensureHandicap(tH);
@@ -3763,6 +3795,12 @@
         for (var hcStepIdx = 2; hcStepIdx < tH.handicap[hcMode].length; hcStepIdx++) {
           tH.handicap[hcMode][hcStepIdx] = hcBase + hcStepIdx * hcStep;
         }
+      }
+      // Keep each running ロビン's own copy in step with the shared chart, so
+      // anything that reads a table's handicap (履歴, the 決勝トーナメント's
+      // inherited starting chart) sees the same numbers.
+      if (hcId === "__room__") {
+        nsH.tables.forEach(function (tb) { tb.handicap = JSON.parse(JSON.stringify(nsH.handicap)); });
       }
       persist(nsH);
       return;
@@ -3833,9 +3871,23 @@
         finalStandings: standings.map(function (r) { return { name: r.name, rating: r.rating, wins: r.wins, losses: r.losses, played: r.played }; })
       };
       ns6.history = [historyEntry].concat(ns6.history).slice(0, HISTORY_LIMIT);
-      ns6.tables = ns6.tables.filter(function (x) { return x.id !== id; });
+      // The finished ロビン表 stays on ロビン表一覧 (locked, marked 終了) so
+      // its results can still be looked at; the 履歴 copy above is what the
+      // トーナメント setup and history screens use. It can be taken off the
+      // list later with 「一覧から外す」.
+      t6.finished = true;
+      t6.finishedAt = historyEntry.finishedAt;
       ui.activeTableId = null;
       persist(ns6);
+      return;
+    }
+    if (action === "hide-table") { ui.pendingConfirm = { type: "hide", tableId: id }; render(); return; }
+    if (action === "confirm-hide-table") {
+      ui.pendingConfirm = null;
+      var nsHd = cloneState();
+      nsHd.tables = nsHd.tables.filter(function (x) { return x.id !== id; });
+      ui.activeTableId = null;
+      persist(nsHd);
       return;
     }
     if (action === "confirm-cancel-table") {
