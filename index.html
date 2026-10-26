@@ -1325,6 +1325,7 @@
     }
     s.tables.forEach(ensureHandicap);
     if (s.bracket) ensureHandicap(s.bracket);
+    if (s.bracket && Array.isArray(s.bracket.rounds) && s.bracket.rounds.length) settleBracketByes(s.bracket.rounds);
     return s;
   }
 
@@ -1548,6 +1549,21 @@
     return seeds;
   }
 
+  // Which teams go to the 決勝トーナメント: either "各ロビンの上位N" (top),
+  // or exactly the teams the organizer ticked (pick), from any rank. Seed
+  // ids are the same tableId_rRank ids either way, so ordering (rank tier
+  // first) and manual-placement numbers keep working unchanged.
+  function maxStandingsLength(entries) {
+    return entries.reduce(function (mx, t) { return Math.max(mx, (t.finalStandings || []).length); }, 0);
+  }
+  function tournamentSeeds(entries, ts) {
+    if (ts.pickMode === "pick") {
+      var picked = ts.pickedIds || [];
+      return buildBracketSeeds(entries, maxStandingsLength(entries)).filter(function (s) { return picked.indexOf(s.id) !== -1; });
+    }
+    return buildBracketSeeds(entries, ts.advanceCount);
+  }
+
   function emptyBracketMatch(round, index) {
     return {
       id: uid("tm"),
@@ -1592,8 +1608,9 @@
       for (var j = 0; j < count; j++) round.push(emptyBracketMatch(r, j));
       rounds.push(round);
     }
-    // Resolve any round-0 byes immediately (cascades forward on its own).
-    rounds[0].forEach(function (m) { resolveIfBye(rounds, m); });
+    // Resolve byes immediately (including ones that only appear in later
+    // rounds because an early pairing has nobody in it at all).
+    settleBracketByes(rounds);
     return rounds;
   }
 
@@ -1627,14 +1644,42 @@
     return slots;
   }
 
-  function resolveIfBye(rounds, m) {
-    if (m.status === "done") return;
-    var hasA = !!m.playerAId, hasB = !!m.playerBId;
-    if (m.bye && hasA && !hasB) finishBracketMatch(rounds, m, "A");
-    else if (m.bye && hasB && !hasA) finishBracketMatch(rounds, m, "B");
+  // 不戦勝 handling for the whole bracket. A side of a match is "empty for
+  // good" when it is an unfilled first-round slot, or when it is fed by an
+  // earlier match that itself has nobody on either side (e.g. two empty
+  // slots next to each other after manual placement). Such a match is a
+  // 不戦勝 (bye): as soon as its one real player is known they advance
+  // automatically. Previously only first-round byes were handled, so a
+  // player whose next opponent could never arrive got stuck waiting
+  // forever ("前の試合の勝者待ち") and the bracket couldn't progress.
+  // Idempotent: safe to run after any change, and on load to unstick
+  // brackets that were created before this fix.
+  function settleBracketByes(rounds) {
+    var voidPrev = null;
+    for (var r = 0; r < rounds.length; r++) {
+      var voidCur = [];
+      for (var i = 0; i < rounds[r].length; i++) {
+        var m = rounds[r][i];
+        var emptyA = r === 0 ? !m.playerAId : !!voidPrev[2 * i];
+        var emptyB = r === 0 ? !m.playerBId : !!voidPrev[2 * i + 1];
+        voidCur[i] = emptyA && emptyB;
+        m.void = emptyA && emptyB;
+        m.bye = emptyA !== emptyB;
+        if (m.bye && m.status !== "done") {
+          if (emptyB && m.playerAId) placeBracketWinner(rounds, m, "A");
+          else if (emptyA && m.playerBId) placeBracketWinner(rounds, m, "B");
+        }
+      }
+      voidPrev = voidCur;
+    }
   }
 
   function finishBracketMatch(rounds, m, winnerSide) {
+    placeBracketWinner(rounds, m, winnerSide);
+    settleBracketByes(rounds);
+  }
+
+  function placeBracketWinner(rounds, m, winnerSide) {
     m.status = "done";
     var wId = winnerSide === "A" ? m.playerAId : m.playerBId;
     var wName = winnerSide === "A" ? m.playerAName : m.playerBName;
@@ -1651,7 +1696,6 @@
     } else {
       next.playerBId = wId; next.playerBName = wName; next.playerBRating = wRating; next.playerBSource = wSource;
     }
-    resolveIfBye(rounds, next);
   }
 
   function resetBracketFrom(rounds, roundIdx, matchIdx) {
@@ -1814,7 +1858,7 @@
     editLegs: null,         // draft legs array while editing an existing table's leg config
     pendingConfirm: null,   // null | {type:"finish"|"cancel", tableId} | {type:"finish-tournament"|"cancel-tournament"}
     confirmDeleteId: null,
-    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3) },
+    tournamentSetup: { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [] },
     showTableCountPicker: false, // "ロビン表をいくつ作りますか？" step, shown before the entrant form
     tableCountDraft: 2,
     tableWizard: null,      // null | {remaining, total} while guiding through creating several robins in a row
@@ -1888,7 +1932,9 @@
           mode: saved.tournamentSetup.mode === "manual" ? "manual" : "auto",
           manualPositions: saved.tournamentSetup.manualPositions && typeof saved.tournamentSetup.manualPositions === "object" ? saved.tournamentSetup.manualPositions : {},
           legCount: saved.tournamentSetup.legCount || 3,
-          legs: Array.isArray(saved.tournamentSetup.legs) ? saved.tournamentSetup.legs : defaultLegs(3)
+          legs: Array.isArray(saved.tournamentSetup.legs) ? saved.tournamentSetup.legs : defaultLegs(3),
+          pickMode: saved.tournamentSetup.pickMode === "pick" ? "pick" : "top",
+          pickedIds: Array.isArray(saved.tournamentSetup.pickedIds) ? saved.tournamentSetup.pickedIds : []
         };
       }
       if (saved.entry && typeof saved.entry === "object") {
@@ -2219,8 +2265,10 @@
         var rowEnd = rowStart + span;
         var connCls = isFinal ? " conn-final" : (i % 2 === 0 ? " conn-top" : " conn-bottom");
         html += '<div class="bracket-match-slot' + connCls + '" style="grid-column:' + (r + 1) + "; grid-row:" + rowStart + " / " + rowEnd + ';">';
-        if (m.bye) {
-          html += bracketDiagramTeamBoxHtml(m.winnerName, true, false);
+        if (m.void) {
+          html += '<div class="bracket-team-box pending">—</div><div class="bracket-team-box pending">—</div>';
+        } else if (m.bye) {
+          html += m.status === "done" ? bracketDiagramTeamBoxHtml(m.winnerName, true, false) : bracketDiagramTeamBoxHtml(null, false, true);
           html += '<div class="bracket-team-box pending">(不戦勝)</div>';
         } else {
           html += m.playerAId ? bracketDiagramTeamBoxHtml(m.playerAName, m.status === "done" && m.winnerId === m.playerAId, false) : bracketDiagramTeamBoxHtml(null, false, true);
@@ -2240,6 +2288,15 @@
   function bracketMatchCard(m, editable, legs) {
     var open = ui.openMatchId === m.id;
     var html = '<div class="match-card" data-match="' + m.id + '">';
+    if (m.void) {
+      html += '<div class="match-top"><div class="match-players"><span class="player-name muted">対戦なし</span></div></div></div>';
+      return html;
+    }
+    if (m.bye && m.status !== "done") {
+      html += '<div class="match-top"><div class="match-players"><span class="player-name muted">前の試合の勝者が不戦勝で進みます</span></div>';
+      html += '<div class="match-meta"><span class="status-pill pending">' + statusLabel("pending") + "</span></div></div></div>";
+      return html;
+    }
     if (m.bye) {
       html += '<div class="match-top"><div class="match-players">';
       html += '<span class="player-name winner">' + esc(m.winnerName) + "</span>";
@@ -2292,7 +2349,7 @@
     var finalRound = b.rounds[totalRounds - 1];
     var champion = finalRound[0] && finalRound[0].status === "done" ? finalRound[0].winnerName : null;
     html += '<div class="card" style="margin-bottom:16px;"><h2 style="margin-top:0;">' + esc(b.name) + "</h2>";
-    html += '<p class="muted">対象: ' + b.sourceNames.map(esc).join("・") + " (各上位" + b.advanceCount + "チーム)</p>";
+    html += '<p class="muted">対象: ' + b.sourceNames.map(esc).join("・") + (b.pickMode === "pick" ? " (選んだチーム)" : " (各上位" + b.advanceCount + "チーム)") + "</p>";
     if (champion) html += '<div class="h-winner" style="font-size:16px;">🏆 優勝: ' + esc(champion) + "</div>";
     html += "</div>";
 
@@ -2349,7 +2406,34 @@
       html += "</button>";
     });
     html += "</div></div>";
-    html += '<div class="field"><label>各ロビンから上位何チーム進出</label><div class="stepper"><button data-action="tournament-advance-dec">−</button><output class="mono">' + ts.advanceCount + '位まで</output><button data-action="tournament-advance-inc">+</button></div></div>';
+    var pickMode = ts.pickMode === "pick";
+    html += '<div class="field"><label>進出チームの選び方</label><div class="seg" role="group" aria-label="進出チームの選び方">';
+    html += '<button data-action="set-tournament-pick-mode" data-mode="top" aria-pressed="' + (!pickMode) + '">各ロビンの上位から</button>';
+    html += '<button data-action="set-tournament-pick-mode" data-mode="pick" aria-pressed="' + pickMode + '">自分で選ぶ</button>';
+    html += "</div></div>";
+    if (!pickMode) {
+      html += '<div class="field"><label>各ロビンから上位何チーム進出</label><div class="stepper"><button data-action="tournament-advance-dec">−</button><output class="mono">' + ts.advanceCount + '位まで</output><button data-action="tournament-advance-inc">+</button></div></div>';
+    } else {
+      var srcForPick = finished.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
+      if (srcForPick.length === 0) {
+        html += '<p class="muted">先に対象のロビン表を選んでください。</p>';
+      } else {
+        html += '<div class="field"><label>トーナメントに進むチームをタップで選択</label>';
+        srcForPick.forEach(function (t) {
+          html += '<div class="muted" style="margin:8px 0 4px;font-weight:700;">' + esc(t.name) + "</div><div class=\"trn-source-list\">";
+          (t.finalStandings || []).forEach(function (r, rank) {
+            var sid = t.id + "_r" + rank;
+            var on = (ts.pickedIds || []).indexOf(sid) !== -1;
+            html += '<button type="button" class="trn-source-row' + (on ? " checked" : "") + '" data-action="toggle-tournament-pick" data-id="' + esc(sid) + '">';
+            html += '<span class="trn-source-check">' + (on ? "☑" : "☐") + "</span>";
+            html += '<span class="trn-source-info"><b>' + (rank + 1) + "位 " + esc(r.name) + "</b>" + ratingBadgeHtml(r.rating) + '<span class="muted mono"> ' + (r.wins || 0) + "勝" + (r.losses || 0) + "敗</span></span>";
+            html += "</button>";
+          });
+          html += "</div>";
+        });
+        html += "</div>";
+      }
+    }
 
     // The tournament (決勝トーナメント) keeps its own leg composition here,
     // independent from whatever each source ロビン表 used for its own
@@ -2363,10 +2447,10 @@
     html += "</div></div>";
 
     var selectedEntries = finished.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
-    var seeds = selectedEntries.length >= 1 ? buildBracketSeeds(selectedEntries, ts.advanceCount) : [];
+    var seeds = selectedEntries.length >= 1 ? tournamentSeeds(selectedEntries, ts) : [];
     var totalSeeds = seeds.length;
     var seedsMsg = selectedEntries.length < 1 ? "ロビン表を1つ以上選んでください"
-      : totalSeeds < 2 ? "進出できるチームが2チーム未満です。進出人数を増やすか、ロビン表を追加してください"
+      : totalSeeds < 2 ? (pickMode ? "トーナメントに進むチームを2チーム以上選んでください" : "進出できるチームが2チーム未満です。進出人数を増やすか、ロビン表を追加してください")
       : "合計 " + totalSeeds + " チームが進出します";
     html += '<p class="muted">' + seedsMsg + "</p>";
     var canCreate = selectedEntries.length >= 1 && totalSeeds >= 2;
@@ -2493,15 +2577,25 @@
     var byId = {};
     pool.forEach(function (e) { byId[e.id] = e; });
     var seen = {};
-    var groups = (ui.entry.plan || []).map(function (g) {
-      return g.filter(function (eid) {
-        if (!byId[eid] || seen[eid]) return false;
+    // slotIds keeps each ロビン's numbered order (番号 1, 2, 3...), with null
+    // for a number not filled yet ("Aの1, Aの5" leaves 2-4 open for now).
+    var slotIds = (ui.entry.plan || []).map(function (g) {
+      var row = g.map(function (eid) {
+        if (!eid || !byId[eid] || seen[eid]) return null;
         seen[eid] = true;
-        return true;
-      }).map(function (eid) { return byId[eid]; });
+        return eid;
+      });
+      return trimSlots(row);
     });
+    var slots = slotIds.map(function (g) { return g.map(function (eid) { return eid ? byId[eid] : null; }); });
+    var groups = slots.map(function (g) { return g.filter(function (e) { return !!e; }); });
     var rest = pool.filter(function (e) { return !seen[e.id]; });
-    return { groups: groups, rest: rest, poolSize: pool.length };
+    return { groups: groups, slots: slots, slotIds: slotIds, rest: rest, poolSize: pool.length };
+  }
+
+  function trimSlots(row) {
+    while (row.length && !row[row.length - 1]) row.pop();
+    return row;
   }
 
   // Labels are positional (1st group = the next free letter, 2nd = the one
@@ -2590,8 +2684,16 @@
         o += '<option value="-1"' + (selectedIdx === -1 ? " selected" : "") + ">未配置</option>";
         return o;
       };
-      var memberRow = function (e, selectedIdx) {
-        return '<div class="entry-row"><span class="entry-name">' + esc(e.name) + ratingBadgeHtml(e.rating) + '</span><select data-action="plan-move" data-id="' + esc(e.id) + '" aria-label="移動先">' + optionHtml(selectedIdx) + "</select></div>";
+      var memberRow = function (e, selectedIdx, pos, slotCap) {
+        var h = '<div class="entry-row">';
+        if (pos != null) h += '<span class="entry-no mono" style="width:auto;font-weight:700;color:var(--ink);">' + (pos + 1) + "</span>";
+        h += '<span class="entry-name">' + esc(e.name) + ratingBadgeHtml(e.rating) + '</span><select data-action="plan-move" data-id="' + esc(e.id) + '" aria-label="ロビン">' + optionHtml(selectedIdx) + "</select>";
+        if (pos != null) {
+          h += '<select data-action="plan-pos" data-id="' + esc(e.id) + '" aria-label="番号" style="max-width:70px;">';
+          for (var k = 1; k <= slotCap; k++) h += '<option value="' + k + '"' + (k === pos + 1 ? " selected" : "") + ">" + k + "番</option>";
+          h += "</select>";
+        }
+        return h + "</div>";
       };
       cp.groups.forEach(function (g, gi) {
         var rated = g.filter(function (e) { return e.rating != null; });
@@ -2600,7 +2702,13 @@
         html += '<div class="plan-group"><h4>' + esc(labels[gi]) + '<span class="plan-meta">' + g.length + unit + (avg != null ? " ・ 平均Rt." + avg : "") + (matchCnt ? " ・ " + matchCnt + "試合" : "") + "</span></h4>";
         if (g.length === 1) html += '<p class="muted" style="font-size:12px;margin:0 0 4px;color:var(--red);">1' + unit + "だけだと試合できません。誰かを移動してください。</p>";
         if (g.length === 0) html += '<p class="muted" style="font-size:12.5px;margin:0;">まだ誰もいません。下の未配置の人のプルダウンで「' + esc(labels[gi]) + "」を選ぶと入ります。（空のままなら作成されません）</p>";
-        html += g.map(function (e) { return memberRow(e, gi); }).join("");
+        var gSlots = cp.slots[gi];
+        var slotCap = Math.max(8, gSlots.length + 1);
+        var hasHole = gSlots.some(function (e) { return !e; });
+        if (hasHole) html += '<p class="muted" style="font-size:12px;margin:0 0 4px;">空いている番号があります。作成するときは番号を詰めて（空きをなくして）作ります。</p>';
+        gSlots.forEach(function (e, pos) {
+          html += e ? memberRow(e, gi, pos, slotCap) : '<div class="entry-row"><span class="entry-no mono" style="width:auto;">' + (pos + 1) + '</span><span class="entry-name muted">（空き）</span></div>';
+        });
         html += '<div style="text-align:right;margin-top:6px;"><button class="btn btn-ghost btn-sm" data-action="entry-remove-group" data-idx="' + gi + '">この枠を削除</button></div></div>';
       });
       if (cp.rest.length > 0) {
@@ -3203,19 +3311,44 @@
     if (action === "plan-move") {
       var enCp = currentEntryPlan();
       var enDest = parseInt(target.value, 10);
-      var enGroupsIds = enCp.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
-      enGroupsIds = enGroupsIds.map(function (g) { return g.filter(function (eid) { return eid !== id; }); });
-      if (enDest >= 0 && enGroupsIds[enDest]) enGroupsIds[enDest].push(id);
+      var enGroupsIds = enCp.slotIds.map(function (g) {
+        return trimSlots(g.map(function (eid) { return eid === id ? null : eid; }));
+      });
+      // Joining a ロビン takes its first open number (or the next one).
+      if (enDest >= 0 && enGroupsIds[enDest]) {
+        var enHole = enGroupsIds[enDest].indexOf(null);
+        if (enHole === -1) enGroupsIds[enDest].push(id); else enGroupsIds[enDest][enHole] = id;
+      }
       // Empty groups are kept (so ロビンB stays ロビンB while it's being
       // filled); one can be removed explicitly with its 削除 button.
       ui.entry.plan = enGroupsIds;
       render();
       return;
     }
+    if (action === "plan-pos") {
+      // Set this person's 番号 within their ロビン. If someone already has
+      // that number, the two swap; otherwise the old number is left open.
+      var enCpP = currentEntryPlan();
+      var enSlots = enCpP.slotIds.map(function (g) { return g.slice(); });
+      var enWant = parseInt(target.value, 10) - 1;
+      for (var enG = 0; enG < enSlots.length; enG++) {
+        var enCur = enSlots[enG].indexOf(id);
+        if (enCur === -1) continue;
+        while (enSlots[enG].length <= enWant) enSlots[enG].push(null);
+        var enOther = enSlots[enG][enWant];
+        enSlots[enG][enWant] = id;
+        enSlots[enG][enCur] = enOther || null;
+        trimSlots(enSlots[enG]);
+        break;
+      }
+      ui.entry.plan = enSlots;
+      render();
+      return;
+    }
     if (action === "entry-add-group") {
       var enCp2 = currentEntryPlan();
-      var enIds2 = enCp2.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
-      if (enIds2.length > 0 && enIds2[enIds2.length - 1].length === 0) { toast("空のロビン枠がすでにあります"); return; }
+      var enIds2 = enCp2.slotIds.map(function (g) { return g.slice(); });
+      if (enIds2.length > 0 && enCp2.groups[enCp2.groups.length - 1].length === 0) { toast("空のロビン枠がすでにあります"); return; }
       enIds2.push([]);
       ui.entry.plan = enIds2;
       render();
@@ -3224,7 +3357,7 @@
     if (action === "entry-remove-group") {
       var enCp3 = currentEntryPlan();
       var enIdx3 = parseInt(target.getAttribute("data-idx"), 10);
-      var enIds3 = enCp3.groups.map(function (g) { return g.map(function (e) { return e.id; }); });
+      var enIds3 = enCp3.slotIds.map(function (g) { return g.slice(); });
       enIds3.splice(enIdx3, 1); // its members (if any) fall back to 未配置
       ui.entry.plan = enIds3;
       render();
@@ -3626,6 +3759,26 @@
       render();
       return;
     }
+    if (action === "set-tournament-pick-mode") {
+      var tsP = ui.tournamentSetup;
+      tsP.pickMode = target.getAttribute("data-mode") === "pick" ? "pick" : "top";
+      // Switching to 自分で選ぶ starts from what 上位N would have picked,
+      // so the usual case is "add/remove a couple" rather than ticking all.
+      if (tsP.pickMode === "pick" && (!tsP.pickedIds || tsP.pickedIds.length === 0)) {
+        var srcP = state.history.filter(function (t) { return tsP.selectedIds.indexOf(t.id) !== -1; });
+        tsP.pickedIds = buildBracketSeeds(srcP, tsP.advanceCount).map(function (sd) { return sd.id; });
+      }
+      render();
+      return;
+    }
+    if (action === "toggle-tournament-pick") {
+      var tsQ = ui.tournamentSetup;
+      tsQ.pickedIds = tsQ.pickedIds || [];
+      var idxQ = tsQ.pickedIds.indexOf(id);
+      if (idxQ === -1) tsQ.pickedIds.push(id); else tsQ.pickedIds.splice(idxQ, 1);
+      render();
+      return;
+    }
     if (action === "tournament-advance-inc" || action === "tournament-advance-dec") {
       var deltaT = action === "tournament-advance-inc" ? 1 : -1;
       ui.tournamentSetup.advanceCount = Math.max(1, Math.min(8, ui.tournamentSetup.advanceCount + deltaT));
@@ -3664,7 +3817,7 @@
     if (action === "create-tournament") {
       var selEntries = state.history.filter(function (t) { return ui.tournamentSetup.selectedIds.indexOf(t.id) !== -1; });
       if (selEntries.length < 1) return;
-      var seeds = buildBracketSeeds(selEntries, ui.tournamentSetup.advanceCount);
+      var seeds = tournamentSeeds(selEntries, ui.tournamentSetup);
       if (seeds.length < 2) { toast("進出できるチームが足りません"); return; }
       var rounds;
       if (ui.tournamentSetup.mode === "manual") {
@@ -3687,6 +3840,7 @@
         id: uid("b"),
         name: "決勝トーナメント",
         advanceCount: ui.tournamentSetup.advanceCount,
+        pickMode: ui.tournamentSetup.pickMode === "pick" ? "pick" : "top",
         sourceIds: selEntries.map(function (t) { return t.id; }),
         sourceNames: selEntries.map(function (t) { return t.name; }),
         legs: ui.tournamentSetup.legs.slice(),
@@ -3696,7 +3850,7 @@
       };
       var nsT = cloneState();
       nsT.bracket = newBracket;
-      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3) };
+      ui.tournamentSetup = { advanceCount: 2, selectedIds: [], mode: "auto", manualPositions: {}, legCount: 3, legs: defaultLegs(3), pickMode: "top", pickedIds: [] };
       persist(nsT);
       return;
     }
