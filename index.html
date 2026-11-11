@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-11-11b";
+  var APP_VERSION = "2026-11-11c";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -1690,10 +1690,15 @@
   }
 
   // Seeds actually used for a given setup (null seedCount = 全チーム).
+  // シード = 1回戦が免除（不戦勝で2回戦から出場）になるチーム。 In a
+  // single-elimination bracket the number of such spots is fixed by the
+  // team count: 枠数 (next power of 2) − チーム数. シードあり gives them to
+  // the top-ranked teams (placed apart, seed 1 and 2 at opposite ends);
+  // シードなし leaves who gets them to the draw. It is not a free choice --
+  // any other number would leave the 2回戦 with an odd number of teams.
   function effectiveSeedCount(ts, total) {
     if (ts.seedMode === "off") return 0;
-    var k = ts.seedCount == null ? total : ts.seedCount;
-    return Math.max(1, Math.min(k, total));
+    return nextPow2(total) - total;
   }
 
   // Re-place the setup bracket from the current シード settings (called
@@ -2638,16 +2643,17 @@
       html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
       html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
       html += "</div></div>";
-      if (seedOn) {
-        html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
-        var byeSeeds = Math.min(kNow, byeNow);
-        var seedNote = "成績上位" + kNow + "チームがシード（早い回戦で当たらない位置）。";
-        if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝。";
-        if (kNow < totalSeeds) seedNote += "残り" + (totalSeeds - kNow) + "チームは抽選。";
-        html += '<p class="muted">' + seedNote + "変更するとすぐ下の表に反映されます。</p>";
+      // シードの数は 枠数 − チーム数 で自動的に決まる（説明を表示）。
+      var calc = totalSeeds + "チーム → " + pSize + "枠のトーナメント → シード（1回戦免除）は " + byeNow + "チーム";
+      html += '<div class="card" style="padding:10px 12px;margin:0 0 4px;background:var(--surface-2);"><div style="font-weight:700;font-size:14px;">' + calc + "</div>";
+      if (byeNow === 0) {
+        html += '<p class="muted" style="margin:4px 0 0;">枠ぴったりなので、全チームが1回戦から出場します（シードなし）。</p>';
+      } else if (seedOn) {
+        html += '<p class="muted" style="margin:4px 0 0;">成績上位の' + byeNow + "チームが1回戦免除で2回戦から出場します。シード同士は離れた位置（第1シードと第2シードは決勝まで当たらない位置）に入り、残りの" + (totalSeeds - byeNow) + "チームは抽選で配置します。</p>";
       } else {
-        html += '<p class="muted">全チームを抽選（ランダム）で配置します。変更するとすぐ下の表に反映されます。</p>';
+        html += '<p class="muted" style="margin:4px 0 0;">1回戦免除の' + byeNow + "枠も含めて、全チームを抽選で配置します。</p>";
       }
+      html += '<p class="muted" style="margin:4px 0 0;font-size:11.5px;">シードの数はチーム数で決まります（枠数 − チーム数）。変えたいときは進出チーム数を変えてください。</p></div>';
 
       // First time the bracket appears (nothing placed yet), fill it from the
       // シード settings so it matches what they say; 「全部空にする」 keeps it
