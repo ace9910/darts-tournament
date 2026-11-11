@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-11-11c";
+  var APP_VERSION = "2026-11-11d";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -1650,34 +1650,47 @@
     return rounds;
   }
 
-  // シードあり/なし. `seeds` is in 成績順 (rank tier order). The top k are
-  // シード: placed in the standard seed positions so they can't meet each
-  // other early, and the 1回戦 byes (不戦勝 / 2回戦から) go to them first,
-  // strongest first. Everyone else is drawn at random into the remaining
-  // spots (any leftover byes land on random non-seeded teams, never two
-  // byes against each other). k = 0 is a full random draw; k = all teams is
-  // exactly the old 成績順に対極 placement.
+  // シード = 1回戦が免除（不戦勝）になるチーム. Any number k of them can be
+  // chosen (0 .. チーム数−2):
+  //  * each シード gets its own 1回戦 pair with an empty partner (不戦勝),
+  //    at the standard seed positions (第1・第2シードは決勝まで当たらない);
+  //  * the other teams play each other in the 1回戦 (drawn by lot; if their
+  //    number is odd, one of them also gets a 不戦勝 by lot);
+  //  * the bracket is made just big enough for that (bracketSizeFor). Any
+  //    spare pairs stay completely empty and sit next to the top seeds, so
+  //    those seeds win more rounds by 不戦勝 (= 3回戦から出場, スーパーシード).
+  // seedOrder pair (v, size+1−v) meets the pair holding seed (size/2+1−v)
+  // in the 2回戦, so the empty pairs use the largest v (they face seeds
+  // 1, 2, 3...) and the 1回戦 matches use the v right after the seeds.
+  function seedPairCounts(total, k) {
+    var nonSeeds = total - k;
+    var m = Math.ceil(nonSeeds / 2);
+    return { k: k, m: m, half: nextPow2(Math.max(1, k + m)) };
+  }
+  function bracketSizeFor(ts, total) {
+    var pc = seedPairCounts(total, effectiveSeedCount(ts, total));
+    return Math.max(2, pc.half * 2);
+  }
   function seededSlots(seeds, k) {
     var total = seeds.length;
-    var size = nextPow2(total);
+    k = Math.max(0, Math.min(k, Math.max(0, total - 2)));
+    var pc = seedPairCounts(total, k);
+    var size = Math.max(2, pc.half * 2);
     var order = seedOrder(size);
-    var slotOfSeed = {};
-    order.forEach(function (sn, i) { slotOfSeed[sn] = i; });
-    k = Math.max(0, Math.min(k, total));
-    var OPEN = {};
-    var slots = [];
-    for (var i = 0; i < size; i++) slots.push(OPEN);
-    for (var sn = 1; sn <= k; sn++) slots[slotOfSeed[sn]] = seeds[sn - 1];
-    var byes = size - total;
-    for (var sb = 1; sb <= k && byes > 0; sb++) { slots[slotOfSeed[sb] ^ 1] = null; byes--; }
-    var freePairs = [];
-    for (var pi = 0; pi < size; pi += 2) {
-      if (slots[pi] === OPEN && slots[pi + 1] === OPEN) freePairs.push(pi);
-    }
-    shuffleInPlace(freePairs);
-    for (var bi = 0; bi < byes; bi++) slots[freePairs[bi] + (Math.random() < 0.5 ? 0 : 1)] = null;
+    var slotOfNum = {};
+    order.forEach(function (sn, i) { slotOfNum[sn] = i; });
+    var slots = new Array(size).fill(null);
+    for (var s = 1; s <= k; s++) slots[slotOfNum[s]] = seeds[s - 1];
     var rest = shuffleInPlace(seeds.slice(k));
-    for (var fi = 0; fi < size; fi++) if (slots[fi] === OPEN) slots[fi] = rest.shift() || null;
+    var pairVs = [];
+    for (var v = k + 1; v <= k + pc.m; v++) pairVs.push(v);
+    // odd number of non-seeds: one random 1回戦 pair gets a 不戦勝
+    var byeV = rest.length % 2 === 1 ? pairVs[Math.floor(Math.random() * pairVs.length)] : null;
+    pairVs.forEach(function (pv) {
+      var a = slotOfNum[pv], b = slotOfNum[size + 1 - pv];
+      if (pv === byeV) { slots[Math.random() < 0.5 ? a : b] = rest.shift() || null; }
+      else { slots[a] = rest.shift() || null; slots[b] = rest.shift() || null; }
+    });
     return slots;
   }
 
@@ -1696,9 +1709,13 @@
   // the top-ranked teams (placed apart, seed 1 and 2 at opposite ends);
   // シードなし leaves who gets them to the draw. It is not a free choice --
   // any other number would leave the 2回戦 with an odd number of teams.
+  // シードの数: なし → 0; not chosen yet → the standard number for this
+  // many teams (枠数 − チーム数, which needs no extra-large bracket);
+  // otherwise whatever was chosen, kept within 0 .. チーム数−2.
   function effectiveSeedCount(ts, total) {
     if (ts.seedMode === "off") return 0;
-    return nextPow2(total) - total;
+    var k = ts.seedCount == null ? nextPow2(total) - total : ts.seedCount;
+    return Math.max(0, Math.min(k, Math.max(0, total - 2)));
   }
 
   // Re-place the setup bracket from the current シード settings (called
@@ -2408,10 +2425,7 @@
   function bracketMatchCard(m, editable, legs) {
     var open = ui.openMatchId === m.id;
     var html = '<div class="match-card" data-match="' + m.id + '">';
-    if (m.void) {
-      html += '<div class="match-top"><div class="match-players"><span class="player-name muted">対戦なし</span></div></div></div>';
-      return html;
-    }
+    if (m.void) return ""; // empty pairing (nobody on either side): nothing to show
     if (m.bye && m.status !== "done") {
       html += '<div class="match-top"><div class="match-players"><span class="player-name muted">前の試合の勝者が不戦勝で進みます</span></div>';
       html += '<div class="match-meta"><span class="status-pill pending">' + statusLabel("pending") + "</span></div></div></div>";
@@ -2500,6 +2514,39 @@
       html += "</div>";
     }
     return html;
+  }
+
+  // 「6チーム・シード4 → 16枠／第1〜3シードは3回戦から…」の説明。
+  function seedSummaryHtml(seeds, k, size) {
+    var total = seeds.length;
+    var h = '<div style="font-weight:700;font-size:14px;">' + total + "チーム・シード" + k + " → " + size + "枠のトーナメント</div>";
+    if (k === 0) {
+      h += '<p class="muted" style="margin:4px 0 0;">全チームが1回戦から出場します（組み合わせは抽選）' + ((total % 2 === 1) ? "。チーム数が奇数なので1チームは抽選で不戦勝です" : "") + "。</p>";
+      return h;
+    }
+    var rounds = buildBracketRoundsFromSlots(seededSlots(seeds, k));
+    var startOf = function (id) {
+      for (var r = 0; r < rounds.length; r++) {
+        var m = rounds[r].find(function (x) { return x.playerAId === id || x.playerBId === id; });
+        if (!m) return r; // not propagated further: waits for an opponent here
+        if (!m.bye) return r;
+      }
+      return rounds.length - 1;
+    };
+    var groups = [];
+    for (var s = 1; s <= k; s++) {
+      var st = startOf(seeds[s - 1].id);
+      if (groups.length && groups[groups.length - 1].st === st) groups[groups.length - 1].to = s;
+      else groups.push({ from: s, to: s, st: st });
+    }
+    var parts = groups.map(function (g) {
+      var who = g.from === g.to ? "第" + g.from + "シード" : "第" + g.from + "〜" + g.to + "シード";
+      return who + "：" + roundLabel(rounds.length, g.st) + "から";
+    });
+    h += '<p class="muted" style="margin:4px 0 0;">' + parts.join(" ／ ") + "</p>";
+    var non = total - k;
+    h += '<p class="muted" style="margin:4px 0 0;">残りの' + non + "チームは1回戦から（組み合わせは抽選）" + (non % 2 === 1 ? "。奇数なので1チームは抽選で不戦勝です" : "") + "。第1シードと第2シードは決勝まで当たりません。</p>";
+    return h;
   }
 
   // Visual bracket for the setup screen: 1回戦 slots are dropdowns; later
@@ -2635,25 +2682,17 @@
     if (totalSeeds < 2) {
       html += '<div class="field"><label>トーナメント表への配置</label><p class="muted">進出チームが2チーム以上決まると、ここにトーナメント表が出ます。</p></div>';
     } else {
-      var pSize = nextPow2(totalSeeds);
+      var pSize = bracketSizeFor(ts, totalSeeds);
       var seedOn = ts.seedMode !== "off";
       var kNow = effectiveSeedCount(ts, totalSeeds);
-      var byeNow = pSize - totalSeeds;
       html += '<div class="field"><label>シード</label><div class="seg" role="group" aria-label="シード">';
       html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
       html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
       html += "</div></div>";
-      // シードの数は 枠数 − チーム数 で自動的に決まる（説明を表示）。
-      var calc = totalSeeds + "チーム → " + pSize + "枠のトーナメント → シード（1回戦免除）は " + byeNow + "チーム";
-      html += '<div class="card" style="padding:10px 12px;margin:0 0 4px;background:var(--surface-2);"><div style="font-weight:700;font-size:14px;">' + calc + "</div>";
-      if (byeNow === 0) {
-        html += '<p class="muted" style="margin:4px 0 0;">枠ぴったりなので、全チームが1回戦から出場します（シードなし）。</p>';
-      } else if (seedOn) {
-        html += '<p class="muted" style="margin:4px 0 0;">成績上位の' + byeNow + "チームが1回戦免除で2回戦から出場します。シード同士は離れた位置（第1シードと第2シードは決勝まで当たらない位置）に入り、残りの" + (totalSeeds - byeNow) + "チームは抽選で配置します。</p>";
-      } else {
-        html += '<p class="muted" style="margin:4px 0 0;">1回戦免除の' + byeNow + "枠も含めて、全チームを抽選で配置します。</p>";
+      if (seedOn) {
+        html += '<div class="field"><label>シードの数（1回戦免除のチーム）</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + kNow + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
       }
-      html += '<p class="muted" style="margin:4px 0 0;font-size:11.5px;">シードの数はチーム数で決まります（枠数 − チーム数）。変えたいときは進出チーム数を変えてください。</p></div>';
+      html += '<div class="card" style="padding:10px 12px;margin:0 0 4px;background:var(--surface-2);">' + seedSummaryHtml(seeds, kNow, pSize) + "</div>";
 
       // First time the bracket appears (nothing placed yet), fill it from the
       // シード settings so it matches what they say; 「全部空にする」 keeps it
@@ -3999,8 +4038,7 @@
       var srcS = state.history.filter(function (t) { return tsS.selectedIds.indexOf(t.id) !== -1; });
       var totS = tournamentSeeds(srcS, tsS).length;
       var curS = effectiveSeedCount(tsS, totS);
-      var nxtS = Math.max(1, Math.min(totS, curS + (action === "seed-count-inc" ? 1 : -1)));
-      tsS.seedCount = nxtS >= totS ? null : nxtS;
+      tsS.seedCount = Math.max(0, Math.min(Math.max(0, totS - 2), curS + (action === "seed-count-inc" ? 1 : -1)));
       applySeedPlacement();
       render();
       return;
@@ -4057,7 +4095,7 @@
       var srcPl = state.history.filter(function (t) { return tsPl.selectedIds.indexOf(t.id) !== -1; });
       var seedsPl = tournamentSeeds(srcPl, tsPl);
       if (seedsPl.length < 2) return;
-      var sizePl = nextPow2(seedsPl.length);
+      var sizePl = bracketSizeFor(tsPl, seedsPl.length);
       var slotsPl;
       if (action === "auto-place") {
         slotsPl = seededSlots(seedsPl, effectiveSeedCount(tsPl, seedsPl.length));
@@ -4099,7 +4137,7 @@
       var rounds;
       // The bracket is always built exactly as placed on the setup screen.
       {
-        var mSize = nextPow2(seeds.length);
+        var mSize = bracketSizeFor(ui.tournamentSetup, seeds.length);
         var positions = ui.tournamentSetup.manualPositions;
         var assigned = seeds.filter(function (s) { return !!positions[s.id]; });
         var usedPos = {};
