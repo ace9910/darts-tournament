@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-10-26d";
+  var APP_VERSION = "2026-11-11a";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -2480,6 +2480,58 @@
     return html;
   }
 
+  // Visual bracket for the setup screen: 1回戦 slots are dropdowns; later
+  // rounds preview who advances (byes resolve automatically, as they will
+  // in the real bracket).
+  function renderSetupBracket(slots, seeds) {
+    var size = slots.length;
+    var preview = buildBracketRoundsFromSlots(slots.map(function (sd) { return sd || null; }));
+    var totalRounds = preview.length;
+    var leafCount = size; // one grid row per 1回戦 slot
+    var firstCol = 170;
+    var minW = firstCol + (totalRounds - 1) * 118 + 110 + totalRounds * 20;
+    var html = '<div class="bracket-diagram-wrap"><div class="bracket-diagram" style="min-width:' + minW + "px; grid-template-columns: " + firstCol + "px repeat(" + Math.max(0, totalRounds - 1) + ", 118px) 110px; grid-template-rows: auto repeat(" + leafCount + ', 40px);">';
+    var optsFor = function (current) {
+      var o = '<option value=""' + (current ? "" : " selected") + ">— 空き</option>";
+      seeds.forEach(function (sd) {
+        o += '<option value="' + esc(sd.id) + '"' + (current && current.id === sd.id ? " selected" : "") + ">" + esc(sd.source.tableName + sd.source.rank + "位 " + sd.name) + "</option>";
+      });
+      return o;
+    };
+    // 1回戦: slot pairs
+    html += '<div class="bracket-round-title" style="grid-column:1;">' + roundLabel(totalRounds, 0) + "</div>";
+    for (var i = 0; i < size; i += 2) {
+      var connCls = totalRounds === 1 ? " conn-final" : ((i / 2) % 2 === 0 ? " conn-top" : " conn-bottom");
+      html += '<div class="bracket-match-slot' + connCls + '" style="grid-column:1; grid-row:' + (2 + i) + " / " + (4 + i) + ';">';
+      for (var s = i; s < i + 2; s++) {
+        html += '<div style="display:flex;align-items:center;gap:4px;margin:2px 0;"><span class="mono" style="font-size:10px;color:var(--ink-faint);width:16px;text-align:right;">' + (s + 1) + '</span><select class="slot-select" data-action="place-slot" data-slot="' + (s + 1) + '" style="width:130px;padding:4px 4px;font-size:12px;border-radius:6px;' + (slots[s] ? "" : "border-style:dashed;color:var(--ink-faint);") + '">' + optsFor(slots[s]) + "</select></div>";
+      }
+      html += "</div>";
+    }
+    // later rounds (preview)
+    for (var r = 1; r < totalRounds; r++) {
+      var isFinal = r === totalRounds - 1;
+      var span = Math.pow(2, r + 1);
+      html += '<div class="bracket-round-title" style="grid-column:' + (r + 1) + ';">' + roundLabel(totalRounds, r) + "</div>";
+      preview[r].forEach(function (m, mi) {
+        var rowStart = 2 + mi * span;
+        var cc = isFinal ? " conn-final" : (mi % 2 === 0 ? " conn-top" : " conn-bottom");
+        html += '<div class="bracket-match-slot' + cc + '" style="grid-column:' + (r + 1) + "; grid-row:" + rowStart + " / " + (rowStart + span) + ';">';
+        if (m.void) {
+          html += '<div class="bracket-team-box pending">—</div><div class="bracket-team-box pending">—</div>';
+        } else {
+          html += m.playerAId ? bracketDiagramTeamBoxHtml(m.playerAName, false, false) : bracketDiagramTeamBoxHtml(null, false, true);
+          html += m.playerBId ? bracketDiagramTeamBoxHtml(m.playerBName, false, false) : (m.bye ? '<div class="bracket-team-box pending">(不戦勝)</div>' : bracketDiagramTeamBoxHtml(null, false, true));
+        }
+        html += "</div>";
+      });
+    }
+    html += '<div class="bracket-round-title" style="grid-column:' + (totalRounds + 1) + ';">優勝</div>';
+    html += '<div class="bracket-champion-col" style="grid-column:' + (totalRounds + 1) + "; grid-row: 2 / " + (2 + leafCount) + ';"><div class="bracket-champion-box pending">?</div></div>';
+    html += "</div></div>";
+    return html;
+  }
+
   function renderTournamentSetup(editable) {
     var ts = ui.tournamentSetup;
     var finished = state.history;
@@ -2553,64 +2605,55 @@
     html += '<p class="muted">' + seedsMsg + "</p>";
     var canCreate = selectedEntries.length >= 1 && totalSeeds >= 2;
 
-    // 配置 and シード are always shown (not only once 2+ teams are picked),
-    // so the organizer can see and set them up front.
-    {
-      html += '<div class="field"><label>トーナメント表への配置</label><div class="seg" role="group" aria-label="配置方法">';
-      html += '<button data-action="set-tournament-mode" data-mode="auto" aria-pressed="' + (ts.mode !== "manual") + '">自動配置</button>';
-      html += '<button data-action="set-tournament-mode" data-mode="manual" aria-pressed="' + (ts.mode === "manual") + '">手動配置</button>';
+    // トーナメント表を先に見せて、そこからチームを枠に入れていく。
+    // Placement lives in ts.manualPositions ({seedId: 枠番号}); the bracket
+    // is created exactly as shown here. 「自動で配置」 just fills it in
+    // (using the シード settings) and everything stays adjustable.
+    html += '<div class="field"><label>トーナメント表への配置</label>';
+    if (totalSeeds < 2) {
+      html += '<p class="muted">進出チームが2チーム以上決まると、ここにトーナメント表が出ます。</p></div>';
+    } else {
+      var pSize = nextPow2(totalSeeds);
+      var pSlots = buildManualSlots(seeds, ts.manualPositions, pSize);
+      var placedIds = {};
+      pSlots.forEach(function (sd) { if (sd) placedIds[sd.id] = true; });
+      var unplaced = seeds.filter(function (sd) { return !placedIds[sd.id]; });
+      html += '<p class="muted" style="margin:0 0 6px;">各枠のプルダウンでチームを選んでください。入っているチームを選ぶと入れ替わります。空いた枠の相手は不戦勝です。</p>';
+      html += renderSetupBracket(pSlots, seeds);
+      if (unplaced.length > 0) {
+        html += '<div class="muted" style="font-size:12.5px;margin-top:4px;">未配置（タップで空いている枠に入ります）</div><div class="entry-pick">';
+        unplaced.forEach(function (sd) {
+          html += '<button data-action="place-next-empty" data-key="' + esc(sd.id) + '">＋ ' + esc(sd.name) + ' <span class="muted mono" style="font-size:11px;">' + esc(sd.source.tableName) + sd.source.rank + "位</span></button>";
+        });
+        html += "</div>";
+      } else {
+        html += '<p class="muted" style="margin-top:6px;">全チームの配置が完了しました。</p>';
+      }
+      html += '<div class="row-2" style="margin-top:10px;">';
+      html += '<button class="btn btn-ghost" data-action="auto-place">自動で配置する</button>';
+      html += '<button class="btn btn-ghost" data-action="clear-placement">全部空にする</button>';
       html += "</div></div>";
 
-      if (ts.mode === "manual" && totalSeeds < 2) {
-        html += '<p class="muted">進出チームが2チーム以上決まると、配置番号を割り振れます。</p>';
-      } else if (ts.mode === "manual") {
-        var size = nextPow2(totalSeeds);
-        var used = {};
-        seeds.forEach(function (s) {
-          var p = ts.manualPositions[s.id];
-          if (p) used[p] = (used[p] || 0) + 1;
-        });
-        html += '<div class="field"><label>勝ち上がったチームに配置番号を割り振ってください(1〜' + size + ")</label><div class=\"trn-manual-list\">";
-        seeds.forEach(function (s) {
-          var p = ts.manualPositions[s.id] || "";
-          var dup = p && used[p] > 1;
-          html += '<div class="trn-manual-row' + (dup ? " dup" : "") + '">';
-          html += '<span class="trn-manual-name">' + esc(s.name) + ratingBadgeHtml(s.rating) + '<span class="muted mono">' + esc(s.source.tableName) + " " + s.source.rank + "位</span></span>";
-          html += '<select class="trn-manual-select" data-action="set-manual-position" data-key="' + esc(s.id) + '"><option value="">-</option>';
-          for (var n = 1; n <= size; n++) {
-            html += '<option value="' + n + '"' + (String(p) === String(n) ? " selected" : "") + '>' + n + "</option>";
-          }
-          html += "</select></div>";
-        });
-        html += "</div></div>";
-        var assignedCount = seeds.filter(function (s) { return !!ts.manualPositions[s.id]; }).length;
-        var hasDup = Object.keys(used).some(function (k) { return used[k] > 1; });
-        if (hasDup) html += '<p class="muted" style="color:var(--red);">同じ配置番号が重複しています</p>';
-        else if (assignedCount < totalSeeds) html += '<p class="muted">全チームに配置番号を割り振ってください（あと' + (totalSeeds - assignedCount) + "）</p>";
-        else html += '<p class="muted">配置完了です</p>';
-        canCreate = canCreate && assignedCount === totalSeeds && !hasDup;
+      // シード settings = the rule 「自動で配置する」 follows.
+      var seedOn = ts.seedMode !== "off";
+      var kNow = effectiveSeedCount(ts, totalSeeds);
+      var byeNow = pSize - totalSeeds;
+      html += '<div class="field"><label>「自動で配置する」のルール（シード）</label><div class="seg" role="group" aria-label="シード">';
+      html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
+      html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
+      html += "</div></div>";
+      if (seedOn) {
+        html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
+        var byeSeeds = Math.min(kNow, byeNow);
+        var seedNote = "成績上位" + kNow + "チームがシード（早い回戦で当たらない位置）。";
+        if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝。";
+        if (kNow < totalSeeds) seedNote += "残り" + (totalSeeds - kNow) + "チームは抽選。";
+        html += '<p class="muted">' + seedNote + "</p>";
       } else {
-        var seedOn = ts.seedMode !== "off";
-        var kNow = effectiveSeedCount(ts, totalSeeds);
-        var byeNow = nextPow2(totalSeeds) - totalSeeds;
-        html += '<div class="field"><label>シード</label><div class="seg" role="group" aria-label="シード">';
-        html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
-        html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
-        html += "</div></div>";
-        if (totalSeeds < 2) {
-          html += '<p class="muted">' + (seedOn ? "進出チームが2チーム以上決まると、シードの数を選べます。" : "全チームを抽選（ランダム）で配置します。") + "</p>";
-        } else if (seedOn) {
-          html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
-          var byeSeeds = Math.min(kNow, byeNow);
-          var seedNote = "成績上位" + kNow + "チームがシードです。シード同士は早い回戦で当たらないよう離して配置します。";
-          if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝（2回戦から）です。";
-          if (kNow < totalSeeds) seedNote += "残りの" + (totalSeeds - kNow) + "チームは抽選（ランダム）で配置します。";
-          if (byeNow > byeSeeds) seedNote += "不戦勝の残り" + (byeNow - byeSeeds) + "枠も抽選です。";
-          html += '<p class="muted">' + seedNote + "</p>";
-        } else {
-          html += '<p class="muted">全' + totalSeeds + "チームを抽選（ランダム）で配置します" + (byeNow > 0 ? "。不戦勝の" + byeNow + "枠も抽選です" : "") + "。</p>";
-        }
+        html += '<p class="muted">全チームを抽選（ランダム）で配置します。</p>';
       }
+      canCreate = canCreate && unplaced.length === 0;
+      if (unplaced.length > 0) html += '<p class="muted" style="color:var(--red);">あと' + unplaced.length + "チームを枠に入れると作成できます。</p>";
     }
 
     html += '<button class="btn btn-primary btn-block" data-action="create-tournament"' + (canCreate ? "" : " disabled") + ">トーナメント表を作成</button>";
@@ -3977,6 +4020,35 @@
       ui.tournamentSetup.legs[idxTL] = parseLegValue(target.value);
       return;
     }
+    if (action === "place-slot" || action === "place-next-empty" || action === "auto-place" || action === "clear-placement") {
+      var tsPl = ui.tournamentSetup;
+      var srcPl = state.history.filter(function (t) { return tsPl.selectedIds.indexOf(t.id) !== -1; });
+      var seedsPl = tournamentSeeds(srcPl, tsPl);
+      if (seedsPl.length < 2) return;
+      var sizePl = nextPow2(seedsPl.length);
+      var slotsPl;
+      if (action === "auto-place") {
+        slotsPl = seededSlots(seedsPl, effectiveSeedCount(tsPl, seedsPl.length));
+      } else if (action === "clear-placement") {
+        slotsPl = new Array(sizePl).fill(null);
+      } else {
+        slotsPl = buildManualSlots(seedsPl, tsPl.manualPositions, sizePl);
+        var wantId = action === "place-slot" ? target.value : target.getAttribute("data-key");
+        var slotIdx = action === "place-slot" ? parseInt(target.getAttribute("data-slot"), 10) - 1 : slotsPl.indexOf(null);
+        if (slotIdx < 0 || slotIdx >= sizePl) { toast("空いている枠がありません"); return; }
+        var chosen = wantId ? seedsPl.find(function (sd) { return sd.id === wantId; }) || null : null;
+        var prevIdx = chosen ? slotsPl.findIndex(function (sd) { return sd && sd.id === chosen.id; }) : -1;
+        var occupant = slotsPl[slotIdx];
+        slotsPl[slotIdx] = chosen;
+        // Picking a team that's already in another 枠 swaps the two.
+        if (prevIdx !== -1 && prevIdx !== slotIdx) slotsPl[prevIdx] = occupant;
+      }
+      var posPl = {};
+      slotsPl.forEach(function (sd, i) { if (sd) posPl[sd.id] = i + 1; });
+      tsPl.manualPositions = posPl;
+      render();
+      return;
+    }
     if (action === "set-manual-position") {
       var key = target.getAttribute("data-key");
       var val = target.value;
@@ -3991,7 +4063,8 @@
       var seeds = tournamentSeeds(selEntries, ui.tournamentSetup);
       if (seeds.length < 2) { toast("進出できるチームが足りません"); return; }
       var rounds;
-      if (ui.tournamentSetup.mode === "manual") {
+      // The bracket is always built exactly as placed on the setup screen.
+      {
         var mSize = nextPow2(seeds.length);
         var positions = ui.tournamentSetup.manualPositions;
         var assigned = seeds.filter(function (s) { return !!positions[s.id]; });
@@ -4002,10 +4075,10 @@
           if (usedPos[p]) dupFound = true;
           usedPos[p] = true;
         });
-        if (assigned.length < seeds.length || dupFound) { toast("全チームに、重複しない配置番号を割り振ってください"); return; }
-        rounds = buildBracketRoundsFromSlots(buildManualSlots(seeds, positions, mSize));
-      } else {
-        rounds = buildBracketRoundsFromSlots(seededSlots(seeds, effectiveSeedCount(ui.tournamentSetup, seeds.length)));
+        var placedSlots = buildManualSlots(seeds, positions, mSize);
+        var placedCount = placedSlots.filter(function (sd) { return !!sd; }).length;
+        if (assigned.length < seeds.length || dupFound || placedCount < seeds.length) { toast("全チームをトーナメント表の枠に入れてください"); return; }
+        rounds = buildBracketRoundsFromSlots(placedSlots);
       }
       var newBracket = {
         id: uid("b"),
