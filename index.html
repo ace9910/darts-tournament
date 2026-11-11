@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-11-11d";
+  var APP_VERSION = "2026-11-11e";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -1668,12 +1668,17 @@
     return { k: k, m: m, half: nextPow2(Math.max(1, k + m)) };
   }
   function bracketSizeFor(ts, total) {
-    var pc = seedPairCounts(total, effectiveSeedCount(ts, total));
+    var k = effectiveSeedCount(ts, total);
+    if (k >= total) return nextPow2(total);
+    var pc = seedPairCounts(total, k);
     return Math.max(2, pc.half * 2);
   }
   function seededSlots(seeds, k) {
     var total = seeds.length;
-    k = Math.max(0, Math.min(k, Math.max(0, total - 2)));
+    // 全チームがシード: everyone in 成績順 seed positions; the 1回戦 byes
+    // (枠数 − チーム数) go to the top of the order.
+    if (k >= total - 1) return slotsFromSeedOrder(seeds);
+    k = Math.max(0, k);
     var pc = seedPairCounts(total, k);
     var size = Math.max(2, pc.half * 2);
     var order = seedOrder(size);
@@ -1712,10 +1717,14 @@
   // シードの数: なし → 0; not chosen yet → the standard number for this
   // many teams (枠数 − チーム数, which needs no extra-large bracket);
   // otherwise whatever was chosen, kept within 0 .. チーム数−2.
+  // Allowed values: 0 (シードなし) .. チーム数−2, or チーム数 (= 全チーム:
+  // everyone placed in 成績順 seed positions). チーム数−1 would leave a
+  // single non-seed alone, so it's treated as 全チーム.
   function effectiveSeedCount(ts, total) {
     if (ts.seedMode === "off") return 0;
     var k = ts.seedCount == null ? nextPow2(total) - total : ts.seedCount;
-    return Math.max(0, Math.min(k, Math.max(0, total - 2)));
+    if (k >= total - 1) return total;
+    return Math.max(0, k);
   }
 
   // Re-place the setup bracket from the current シード settings (called
@@ -2519,7 +2528,12 @@
   // 「6チーム・シード4 → 16枠／第1〜3シードは3回戦から…」の説明。
   function seedSummaryHtml(seeds, k, size) {
     var total = seeds.length;
-    var h = '<div style="font-weight:700;font-size:14px;">' + total + "チーム・シード" + k + " → " + size + "枠のトーナメント</div>";
+    var h = '<div style="font-weight:700;font-size:14px;">' + total + "チーム・シード" + (k === 0 ? "なし" : k >= total ? "全チーム" : k) + " → " + size + "枠のトーナメント</div>";
+    if (k >= total) {
+      var byesAll = size - total;
+      h += '<p class="muted" style="margin:4px 0 0;">全チームを成績順の位置に配置します（第1シードと第2シードは決勝まで当たらない、など上位ほど離れた位置）。' + (byesAll > 0 ? "上位" + byesAll + "チームは1回戦免除です。" : "全チームが1回戦から出場します。") + "</p>";
+      return h;
+    }
     if (k === 0) {
       h += '<p class="muted" style="margin:4px 0 0;">全チームが1回戦から出場します（組み合わせは抽選）' + ((total % 2 === 1) ? "。チーム数が奇数なので1チームは抽選で不戦勝です" : "") + "。</p>";
       return h;
@@ -2685,13 +2699,8 @@
       var pSize = bracketSizeFor(ts, totalSeeds);
       var seedOn = ts.seedMode !== "off";
       var kNow = effectiveSeedCount(ts, totalSeeds);
-      html += '<div class="field"><label>シード</label><div class="seg" role="group" aria-label="シード">';
-      html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
-      html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
-      html += "</div></div>";
-      if (seedOn) {
-        html += '<div class="field"><label>シードの数（1回戦免除のチーム）</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + kNow + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
-      }
+      var kLabel = kNow === 0 ? "なし" : kNow >= totalSeeds ? "全チーム" : kNow + "チーム";
+      html += '<div class="field"><label>シードの数（0＝シードなし〜全チーム）</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono" style="min-width:84px;">' + kLabel + '</output><button data-action="seed-count-inc">+</button></div></div>';
       html += '<div class="card" style="padding:10px 12px;margin:0 0 4px;background:var(--surface-2);">' + seedSummaryHtml(seeds, kNow, pSize) + "</div>";
 
       // First time the bracket appears (nothing placed yet), fill it from the
@@ -2718,7 +2727,7 @@
         html += '<p class="muted" style="margin-top:6px;">全チームの配置が完了しました。</p>';
       }
       html += '<div class="row-2" style="margin-top:10px;">';
-      html += '<button class="btn btn-ghost" data-action="auto-place">' + (seedOn ? "シードどおりに配置し直す" : "抽選し直す") + "</button>";
+      html += '<button class="btn btn-ghost" data-action="auto-place">' + (kNow > 0 ? "シードどおりに配置し直す" : "抽選し直す") + "</button>";
       html += '<button class="btn btn-ghost" data-action="clear-placement">全部空にする</button>';
       html += "</div></div>";
       canCreate = canCreate && unplaced.length === 0;
@@ -4038,7 +4047,12 @@
       var srcS = state.history.filter(function (t) { return tsS.selectedIds.indexOf(t.id) !== -1; });
       var totS = tournamentSeeds(srcS, tsS).length;
       var curS = effectiveSeedCount(tsS, totS);
-      tsS.seedCount = Math.max(0, Math.min(Math.max(0, totS - 2), curS + (action === "seed-count-inc" ? 1 : -1)));
+      var maxPartial = Math.max(0, totS - 2); // values: 0..totS−2, then 全チーム (totS)
+      var nxt;
+      if (action === "seed-count-inc") nxt = curS >= maxPartial ? totS : curS + 1;
+      else nxt = curS >= totS ? maxPartial : Math.max(0, curS - 1);
+      tsS.seedMode = "on";
+      tsS.seedCount = nxt;
       applySeedPlacement();
       render();
       return;
