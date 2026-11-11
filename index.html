@@ -1246,7 +1246,7 @@
   // the server (bypassing the cache) and, if the server has a newer one,
   // reopens itself once with a fresh URL so phones don't keep showing an
   // old cached version after an update.
-  var APP_VERSION = "2026-11-11a";
+  var APP_VERSION = "2026-11-11b";
   (function checkForNewerVersion() {
     try {
       if (!window.fetch || location.protocol.indexOf("http") !== 0) return;
@@ -1696,6 +1696,21 @@
     return Math.max(1, Math.min(k, total));
   }
 
+  // Re-place the setup bracket from the current シード settings (called
+  // whenever those settings change, so the change is visible right away).
+  function applySeedPlacement() {
+    var ts = ui.tournamentSetup;
+    var src = state.history.filter(function (t) { return ts.selectedIds.indexOf(t.id) !== -1; });
+    var sds = tournamentSeeds(src, ts);
+    if (sds.length < 2) return;
+    var slots = seededSlots(sds, effectiveSeedCount(ts, sds.length));
+    var pos = {};
+    slots.forEach(function (sd, i) { if (sd) pos[sd.id] = i + 1; });
+    ts.manualPositions = pos;
+    ts.cleared = false;
+    ts.placedFor = sds.map(function (sd) { return sd.id; }).join(",");
+  }
+
   function slotsFromSeedOrder(seeds) {
     // Standard tournament seeding: seed 1 and seed 2 land at opposite ends
     // of the bracket and can only meet in the final, seed 3/4 next, etc.
@@ -2026,7 +2041,9 @@
           pickMode: saved.tournamentSetup.pickMode === "pick" ? "pick" : "top",
           pickedIds: Array.isArray(saved.tournamentSetup.pickedIds) ? saved.tournamentSetup.pickedIds : [],
           seedMode: saved.tournamentSetup.seedMode === "off" ? "off" : "on",
-          seedCount: typeof saved.tournamentSetup.seedCount === "number" ? saved.tournamentSetup.seedCount : null
+          seedCount: typeof saved.tournamentSetup.seedCount === "number" ? saved.tournamentSetup.seedCount : null,
+          cleared: !!saved.tournamentSetup.cleared,
+          placedFor: typeof saved.tournamentSetup.placedFor === "string" ? saved.tournamentSetup.placedFor : null
         };
       }
       if (saved.entry && typeof saved.entry === "object") {
@@ -2607,18 +2624,44 @@
 
     // トーナメント表を先に見せて、そこからチームを枠に入れていく。
     // Placement lives in ts.manualPositions ({seedId: 枠番号}); the bracket
-    // is created exactly as shown here. 「自動で配置」 just fills it in
-    // (using the シード settings) and everything stays adjustable.
-    html += '<div class="field"><label>トーナメント表への配置</label>';
+    // is created exactly as shown here. シード settings sit right above the
+    // bracket and re-place it immediately when changed; any 枠 can still be
+    // adjusted by hand afterwards.
     if (totalSeeds < 2) {
-      html += '<p class="muted">進出チームが2チーム以上決まると、ここにトーナメント表が出ます。</p></div>';
+      html += '<div class="field"><label>トーナメント表への配置</label><p class="muted">進出チームが2チーム以上決まると、ここにトーナメント表が出ます。</p></div>';
     } else {
       var pSize = nextPow2(totalSeeds);
+      var seedOn = ts.seedMode !== "off";
+      var kNow = effectiveSeedCount(ts, totalSeeds);
+      var byeNow = pSize - totalSeeds;
+      html += '<div class="field"><label>シード</label><div class="seg" role="group" aria-label="シード">';
+      html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
+      html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
+      html += "</div></div>";
+      if (seedOn) {
+        html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
+        var byeSeeds = Math.min(kNow, byeNow);
+        var seedNote = "成績上位" + kNow + "チームがシード（早い回戦で当たらない位置）。";
+        if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝。";
+        if (kNow < totalSeeds) seedNote += "残り" + (totalSeeds - kNow) + "チームは抽選。";
+        html += '<p class="muted">' + seedNote + "変更するとすぐ下の表に反映されます。</p>";
+      } else {
+        html += '<p class="muted">全チームを抽選（ランダム）で配置します。変更するとすぐ下の表に反映されます。</p>';
+      }
+
+      // First time the bracket appears (nothing placed yet), fill it from the
+      // シード settings so it matches what they say; 「全部空にする」 keeps it
+      // empty on purpose (ts.cleared) for placing everyone by hand.
+      // Also re-fill whenever the set of advancing teams changes (another
+      // ロビン or team ticked), so the bracket always matches the teams.
+      var seedSig = seeds.map(function (sd) { return sd.id; }).join(",");
+      if (!ts.cleared && ts.placedFor !== seedSig) applySeedPlacement();
       var pSlots = buildManualSlots(seeds, ts.manualPositions, pSize);
       var placedIds = {};
       pSlots.forEach(function (sd) { if (sd) placedIds[sd.id] = true; });
       var unplaced = seeds.filter(function (sd) { return !placedIds[sd.id]; });
-      html += '<p class="muted" style="margin:0 0 6px;">各枠のプルダウンでチームを選んでください。入っているチームを選ぶと入れ替わります。空いた枠の相手は不戦勝です。</p>';
+      html += '<div class="field"><label>トーナメント表への配置</label>';
+      html += '<p class="muted" style="margin:0 0 6px;">各枠のプルダウンでチームを入れ替えられます。入っているチームを選ぶと入れ替わります。空いた枠の相手は不戦勝です。</p>';
       html += renderSetupBracket(pSlots, seeds);
       if (unplaced.length > 0) {
         html += '<div class="muted" style="font-size:12.5px;margin-top:4px;">未配置（タップで空いている枠に入ります）</div><div class="entry-pick">';
@@ -2630,28 +2673,9 @@
         html += '<p class="muted" style="margin-top:6px;">全チームの配置が完了しました。</p>';
       }
       html += '<div class="row-2" style="margin-top:10px;">';
-      html += '<button class="btn btn-ghost" data-action="auto-place">自動で配置する</button>';
+      html += '<button class="btn btn-ghost" data-action="auto-place">' + (seedOn ? "シードどおりに配置し直す" : "抽選し直す") + "</button>";
       html += '<button class="btn btn-ghost" data-action="clear-placement">全部空にする</button>';
       html += "</div></div>";
-
-      // シード settings = the rule 「自動で配置する」 follows.
-      var seedOn = ts.seedMode !== "off";
-      var kNow = effectiveSeedCount(ts, totalSeeds);
-      var byeNow = pSize - totalSeeds;
-      html += '<div class="field"><label>「自動で配置する」のルール（シード）</label><div class="seg" role="group" aria-label="シード">';
-      html += '<button data-action="set-seed-mode" data-mode="on" aria-pressed="' + seedOn + '">シードあり</button>';
-      html += '<button data-action="set-seed-mode" data-mode="off" aria-pressed="' + (!seedOn) + '">シードなし</button>';
-      html += "</div></div>";
-      if (seedOn) {
-        html += '<div class="field"><label>シードの数</label><div class="stepper"><button data-action="seed-count-dec">−</button><output class="mono">' + (kNow === totalSeeds ? "全" + totalSeeds : kNow) + 'チーム</output><button data-action="seed-count-inc">+</button></div></div>';
-        var byeSeeds = Math.min(kNow, byeNow);
-        var seedNote = "成績上位" + kNow + "チームがシード（早い回戦で当たらない位置）。";
-        if (byeSeeds > 0) seedNote += "うち上位" + byeSeeds + "チームは1回戦が不戦勝。";
-        if (kNow < totalSeeds) seedNote += "残り" + (totalSeeds - kNow) + "チームは抽選。";
-        html += '<p class="muted">' + seedNote + "</p>";
-      } else {
-        html += '<p class="muted">全チームを抽選（ランダム）で配置します。</p>';
-      }
       canCreate = canCreate && unplaced.length === 0;
       if (unplaced.length > 0) html += '<p class="muted" style="color:var(--red);">あと' + unplaced.length + "チームを枠に入れると作成できます。</p>";
     }
@@ -3960,6 +3984,7 @@
     }
     if (action === "set-seed-mode") {
       ui.tournamentSetup.seedMode = target.getAttribute("data-mode") === "off" ? "off" : "on";
+      applySeedPlacement();
       render();
       return;
     }
@@ -3970,6 +3995,7 @@
       var curS = effectiveSeedCount(tsS, totS);
       var nxtS = Math.max(1, Math.min(totS, curS + (action === "seed-count-inc" ? 1 : -1)));
       tsS.seedCount = nxtS >= totS ? null : nxtS;
+      applySeedPlacement();
       render();
       return;
     }
@@ -4046,6 +4072,8 @@
       var posPl = {};
       slotsPl.forEach(function (sd, i) { if (sd) posPl[sd.id] = i + 1; });
       tsPl.manualPositions = posPl;
+      tsPl.cleared = action === "clear-placement";
+      tsPl.placedFor = seedsPl.map(function (sd) { return sd.id; }).join(",");
       render();
       return;
     }
